@@ -1,2 +1,2 @@
-export * from './editor/plate-editor.tsx'
-export * from './static-editor/static-editor.tsx'
+export { PlateEditor } from './editor/plate-editor.tsx'
+export { StaticEditor } from './static-editor/static-editor.tsx'

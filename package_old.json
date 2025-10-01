@@ -1,6 +1,6 @@
 {
   "name": "@oneplatformdev/plate",
-  "version": "0.0.15",
+  "version": "0.0.6",
   "description": "plate library",
   "author": "One Platform Development Team",
   "keywords": [
@@ -22,9 +22,9 @@
   "license": "MIT",
   "type": "module",
   "source": "./index.ts",
-  "default": "./index.js",
   "main": "./index.js",
   "module": "./index.js",
+  "default": "./index.js",
   "types": "./index.d.ts",
   "sideEffects": [
     "**/*.css"
@@ -48,14 +48,9 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:ts": "tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "prepack": "node scripts/prepare-dist-pkg.mjs",
-    "patch": "npm version patch --no-git-tag-version --no-commit-hooks",
-    "publish:dist": "cd dist && npm publish --access public --registry https://registry.npmjs.org",
-    "pack": "yarn run patch && yarn build && yarn prepack && yarn publish:dist"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.15",

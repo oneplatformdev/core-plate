@@ -3,6 +3,7 @@ import { defineConfig } from "vite";
 import svgr from "vite-plugin-svgr";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { resolve, join, extname, relative } from 'node:path'
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 
 import dts from 'vite-plugin-dts';
@@ -13,11 +14,25 @@ import { external } from "./external.ts";
 export default defineConfig(() => ({
 	root: __dirname,
 	plugins: [
-		react(), tsconfigPaths(), svgr(),
+		react(),
+		tsconfigPaths(),
+		svgr(),
+		viteStaticCopy({
+			targets: [
+				{
+					src: '*.md',
+					dest: '.',
+				},
+				{
+					src: 'LICENSE',
+					dest: '.',
+				}
+			],
+		}),
 		dts({
 			entryRoot: 'src',
 			tsconfigPath: join(__dirname, 'tsconfig.app.json'),
-			bundledPackages: [ '@oneplatformdev/plate' ],
+			bundledPackages: [],
 		}) ],
 	build: {
 		outDir: './dist',
@@ -51,8 +66,9 @@ export default defineConfig(() => ({
 		rollupOptions: {
 			external,
 			output: {
-				preserveModules: true,
-				preserveModulesRoot: 'src',
+				preserveModules: false,
+				// preserveModules: true,
+				// preserveModulesRoot: 'src',
 				globals: {
 					path: 'path',
 					react: 'React',
