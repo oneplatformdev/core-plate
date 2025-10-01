@@ -8,7 +8,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 import dts from 'vite-plugin-dts';
 import { globSync } from 'glob';
-import { external } from "./external.ts";
+import { external_1 } from "./external_1.ts";
 
 // https://vite.dev/config/
 export default defineConfig(() => ({
@@ -64,7 +64,7 @@ export default defineConfig(() => ({
 			}
 		},
 		rollupOptions: {
-			external,
+			external: external_1,
 			output: {
 				preserveModules: true,
 				preserveModulesRoot: 'src',

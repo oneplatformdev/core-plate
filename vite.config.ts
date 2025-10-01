@@ -8,6 +8,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 import dts from 'vite-plugin-dts';
 import { globSync } from 'glob';
+import { external_1 } from "./external_1.ts";
 import { external } from "./external.ts";
 
 // https://vite.dev/config/
@@ -64,11 +65,7 @@ export default defineConfig(() => ({
 			}
 		},
 		rollupOptions: {
-			external: (id: string) => {
-				if (id.startsWith('.') || id.startsWith('/')) return false;
-				if (id.startsWith('@op/') || id.startsWith('@oneplatformdev/plate/')) return false;
-				return true; // все інше external
-			},
+			external,
 			output: {
 				preserveModules: true,
 				preserveModulesRoot: 'src',
