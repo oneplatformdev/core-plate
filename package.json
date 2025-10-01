@@ -1,6 +1,6 @@
 {
   "name": "@oneplatformdev/plate",
-  "version": "0.0.15",
+  "version": "0.0.18",
   "description": "plate library",
   "author": "One Platform Development Team",
   "keywords": [
@@ -55,11 +55,22 @@
     "prepack": "node scripts/prepare-dist-pkg.mjs",
     "patch": "npm version patch --no-git-tag-version --no-commit-hooks",
     "publish:dist": "cd dist && npm publish --access public --registry https://registry.npmjs.org",
-    "pack": "yarn run patch && yarn build && yarn prepack && yarn publish:dist"
+    "release": "yarn run patch && yarn build && yarn prepack && yarn publish:dist"
+  },
+  "peerDependencies": {
+    "react": ">=18 <20",
+    "react-dom": ">=18 <20",
+    "@oneplatformdev/ui": ">=0.0.1",
+    "class-variance-authority": "^0.7.1",
+    "i18next": "^23.15.1",
+    "lucide-react": "^0.525.0",
+    "react-day-picker": "^9.7.0",
+    "react-i18next": "^15.0.2",
+    "zod": "^3.24.1",
+    "tailwind-merge": "^2.5.2"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.15",
-    "@oneplatformdev/ui": "0.0.1-beta.156",
     "@radix-ui/react-alert-dialog": "^1.1.4",
     "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-checkbox": "^1.1.3",
@@ -117,18 +128,11 @@
     "@udecode/plate-trailing-block": "41.0.0",
     "@udecode/slate": "41.0.0",
     "@uploadthing/react": "7.1.0",
-    "class-variance-authority": "^0.7.1",
     "html2canvas": "^1.4.1",
-    "i18next": "^23.15.1",
-    "lucide-react": "^0.525.0",
     "pdf-lib": "^1.17.1",
     "prismjs": "^1.29.0",
-    "react": "^18.3.1",
-    "react-day-picker": "^9.7.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
-    "react-dom": "^18.3.1",
-    "react-i18next": "^15.0.2",
     "react-lite-youtube-embed": "^2.4.0",
     "react-player": "^2.16.0",
     "react-tweet": "^3.2.1",
@@ -138,10 +142,8 @@
     "slate-hyperscript": "^0.100.0",
     "slate-react": "^0.112.0",
     "sonner": "^1.7.1",
-    "tailwind-merge": "^2.5.2",
     "uploadthing": "7.2.0",
-    "use-file-picker": "2.1.2",
-    "zod": "^3.24.1"
+    "use-file-picker": "2.1.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

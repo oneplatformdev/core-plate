@@ -64,15 +64,12 @@ export default defineConfig(() => ({
 			}
 		},
 		rollupOptions: {
-			external: (id: string) => {
-				if (id.startsWith('.') || id.startsWith('/')) return false;
-				if (id.startsWith('@op/') || id.startsWith('@oneplatformdev/plate/')) return false;
-				return true; // все інше external
-			},
+			external,
 			output: {
 				preserveModules: true,
 				preserveModulesRoot: 'src',
-				exports: 'named',
+				interop: 'default',
+				format: 'es',
 				globals: {
 					path: 'path',
 					react: 'React',
@@ -81,7 +78,5 @@ export default defineConfig(() => ({
 				}
 			}
 		},
-		minify: 'esbuild',
-		target: 'es2018'
 	},
 }));
