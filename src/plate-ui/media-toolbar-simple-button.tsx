@@ -2,7 +2,7 @@
 
 import type { DropdownMenuProps } from '@radix-ui/react-dropdown-menu';
 import { insertNodes, isUrl } from '@udecode/plate-common';
-import { PlateEditor, useEditorRef } from '@udecode/plate-common/react';
+import { type PlateEditor, useEditorRef } from '@udecode/plate-common/react';
 import {
   FilePlugin,
   ImagePlugin,

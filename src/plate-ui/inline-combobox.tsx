@@ -249,7 +249,7 @@ const InlineComboboxInput = forwardRef<
     <>
       {showTrigger && trigger}
 
-      <span className="relative min-h-[1lh]">
+      <span className="relative min-h-lh">
         <span
           className="invisible overflow-hidden text-nowrap"
           aria-hidden="true"
@@ -284,7 +284,7 @@ const InlineComboboxContent: typeof ComboboxPopover = ({
     <Portal>
       <ComboboxPopover
         className={cn(
-          'z-[500] max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md',
+          'z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md',
           className
         )}
         {...props}
@@ -385,7 +385,7 @@ const InlineComboboxRow = ComboboxRow;
 
 const InlineComboboxGroup = withCn(
   ComboboxGroup,
-  'hidden py-1.5 [&:has([role=option])]:block [&:not(:last-child)]:border-b'
+  'hidden py-1.5 [&:has([role=option])]:block not-last:border-b'
 );
 
 const InlineComboboxGroupLabel = withCn(

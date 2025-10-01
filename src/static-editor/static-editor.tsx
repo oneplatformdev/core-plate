@@ -76,7 +76,7 @@ import {
     BaseTableRowPlugin,
 } from '@udecode/plate-table';
 import { BaseTogglePlugin } from '@udecode/plate-toggle';
-import { Value } from "@udecode/slate";
+import { type Value } from "@udecode/slate";
 import React from 'react';
 
 import { Prism } from '../plate-ui/code-block-combobox';

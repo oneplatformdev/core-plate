@@ -59,10 +59,10 @@ export const TableCellElement = withRef<
         className,
         'relative h-full overflow-visible border-none bg-background p-0',
         hideBorder && 'before:border-none',
-        element.background ? 'bg-[--cellBackground]' : 'bg-background',
+        element.background ? 'bg-(--cellBackground)' : 'bg-background',
         !hideBorder &&
           cn(
-            isHeader && 'text-left [&_>_*]:m-0',
+            isHeader && 'text-left *:m-0',
             'before:size-full',
             selected && 'before:z-10 before:bg-muted',
             "before:absolute before:box-border before:select-none before:content-['']",
@@ -120,7 +120,7 @@ export const TableCellElement = withRef<
               {hovered && (
                 <div
                   className={cn(
-                    'absolute -top-3 z-30 h-[calc(100%_+_12px)] w-1 bg-ring',
+                    'absolute -top-3 z-30 h-[calc(100%+12px)] w-1 bg-ring',
                     'right-[-1.5px]'
                   )}
                 />
@@ -128,7 +128,7 @@ export const TableCellElement = withRef<
               {hoveredLeft && (
                 <div
                   className={cn(
-                    'absolute -top-3 z-30 h-[calc(100%_+_12px)] w-1 bg-ring',
+                    'absolute -top-3 z-30 h-[calc(100%+12px)] w-1 bg-ring',
                     'left-[-1.5px]'
                   )}
                 />

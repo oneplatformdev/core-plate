@@ -33,6 +33,8 @@ export default defineConfig(() => ({
 			cssFileName: 'styles',
 			entry: {
 				index: resolve(__dirname, 'src/index.ts'),
+				'plate-editor': resolve(__dirname, 'src/editor/plate-editor.tsx'),
+				'static-editor': resolve(__dirname, 'src/static-editor/static-editor.tsx'),
 				...Object.fromEntries(
 					globSync('src/**/*.{ts,tsx}').map((filename) => {
 						return [

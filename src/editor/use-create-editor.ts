@@ -75,7 +75,7 @@ import {
   TableRowPlugin,
 } from '@udecode/plate-table/react';
 import { TogglePlugin } from '@udecode/plate-toggle/react';
-import { Value } from "@udecode/slate";
+import { type Value } from "@udecode/slate";
 
 import { editorPlugins } from './plugins/editor-plugins';
 import { FixedToolbarPlugin } from './plugins/fixed-toolbar-plugin';

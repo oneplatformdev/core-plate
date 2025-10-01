@@ -17,7 +17,7 @@ const commandVariants = cva(
     },
     variants: {
       variant: {
-        combobox: 'overflow-visible bg-transparent has-[[data-readonly]]:w-fit',
+        combobox: 'overflow-visible bg-transparent has-data-readonly:w-fit',
         default: 'overflow-hidden',
       },
     },

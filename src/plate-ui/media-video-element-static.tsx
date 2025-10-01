@@ -4,7 +4,7 @@ import type { SlateElementProps } from '@udecode/plate-common';
 import { getNodeString, SlateElement } from '@udecode/plate-common';
 import type { TVideoElement } from '@udecode/plate-media';
 import i18n from "i18next";
-import { FC, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const isYouTube = (url: string) => {
 	return url.includes("youtube.com") || url.includes("youtu.be");
@@ -36,7 +36,7 @@ const checkVideoType = async (url: string): Promise<"video" | "iframe" | "error"
 	}
 };
 
-const RenderVideo: FC<SlateElementProps> = (props) => {
+const RenderVideo = (props: SlateElementProps) => {
 	const {
 		url,
 		width,

@@ -1,16 +1,16 @@
 'use client';
-import { IUseCreateEditorProps, useCreateEditor } from '@op/modules/plate/editor/use-create-editor';
+import { type IUseCreateEditorProps, useCreateEditor } from '@op/modules/plate/editor/use-create-editor';
 import { pinToolbar } from "@op/modules/plate/lib/pitToolbar.ts";
-import { Editor, EditorContainer, EditorProps } from '@op/modules/plate/plate-ui/editor';
+import { Editor, EditorContainer, type EditorProps } from '@op/modules/plate/plate-ui/editor';
 import { Plate } from '@udecode/plate-common/react';
-import { FC, useEffect } from 'react';
+import { useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
 import { UploadStateProvider } from '../context/UploadStateProvider';
 import {
 	FileUploadContext,
-	IFileUploadContextValue
+	type IFileUploadContextValue
 } from "@op/modules/plate/context/FileUploadContext.ts";
 
 export interface PlateEditorProps
@@ -21,7 +21,7 @@ export interface PlateEditorProps
 	className?: React.HTMLAttributes<HTMLDivElement>["className"];
 }
 
-export const PlateEditor: FC<PlateEditorProps> = (props) => {
+export const PlateEditor = (props: PlateEditorProps) => {
 	const {
 		initialValue,
 		onUploadFile,
@@ -33,7 +33,7 @@ export const PlateEditor: FC<PlateEditorProps> = (props) => {
 
 	useEffect(() => {
 		const cleanup = pinToolbar({
-			containerSelector: `#${global.CONTAINER_LAYOUT_ID || 'container-layout'}`,
+			containerSelector: 'container-layout',
 		});
 		return cleanup;
 	}, []);

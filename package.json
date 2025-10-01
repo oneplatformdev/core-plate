@@ -1,8 +1,52 @@
 {
   "name": "@oneplatformdev/plate",
-  "private": true,
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "description": "plate library",
+  "author": "One Platform Development Team",
+  "keywords": [
+    "react",
+    "oneplatform",
+    "plate",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oneplatformdev/core-plate.git",
+    "directory": "packages/hooks"
+  },
+  "bugs": {
+    "url": "https://github.com/oneplatformdev/core-plate/issues"
+  },
+  "homepage": "private package",
+  "private": false,
+  "license": "MIT",
   "type": "module",
+  "source": "./index.ts",
+  "main": "./index.js",
+  "module": "./index.js",
+  "default": "./index.js",
+  "types": "./index.d.ts",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./*",
+        "./*/index.d.ts",
+        "./index.d.ts"
+      ]
+    }
+  },
+  "publishConfig": {
+    "directory": "dist",
+    "access": "public"
+  },
+  "files": [
+    "**/*",
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -190,6 +234,5 @@
     "vite-plugin-static-copy": "^3.1.0",
     "vite-plugin-svgr": "^4.3.0",
     "vite-tsconfig-paths": "^5.1.4"
-  },
-  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+  }
 }

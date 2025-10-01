@@ -13,7 +13,7 @@ import {
 import { HEADING_KEYS } from '@udecode/plate-heading';
 import { INDENT_LIST_KEYS, ListStyleType } from '@udecode/plate-indent-list';
 import { TogglePlugin } from '@udecode/plate-toggle/react';
-import { isElement, TElement, TText } from '@udecode/slate';
+import { isElement, type TElement, type TText } from '@udecode/slate';
 import {
   ChevronDownIcon,
   ChevronRightIcon,
