@@ -79,9 +79,9 @@ import { BaseTogglePlugin } from '@udecode/plate-toggle';
 import { type Value } from "@udecode/slate";
 import React from 'react';
 
-import { Prism } from '@/plate-ui/prism'
-import { FireLiComponent, FireMarker } from '@/plate-ui/indent-fire-marker';
-import { TodoLiStatic, TodoMarkerStatic } from '@/plate-ui/indent-todo-marker-static';
+import { Prism } from '../plate-ui/prism'
+import { FireLiComponent, FireMarker } from '../plate-ui/indent-fire-marker';
+import { TodoLiStatic, TodoMarkerStatic } from '../plate-ui/indent-todo-marker-static';
 
 const components = {
     [BaseAudioPlugin.key]: MediaAudioElementStatic,

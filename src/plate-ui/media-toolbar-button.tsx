@@ -35,7 +35,7 @@ import {
   ToolbarSplitButtonPrimary,
   ToolbarSplitButtonSecondary,
 } from './toolbar';
-import { useUploadState } from '@/hooks/use-upload-state';
+import { useUploadState } from '../hooks/use-upload-state';
 
 const MEDIA_CONFIG: Record<
   string,

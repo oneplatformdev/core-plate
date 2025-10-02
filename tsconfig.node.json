@@ -24,7 +24,7 @@
     /* aliases */
     "baseUrl": ".",
     "paths": {
-      "@op/modules/plate/*": ["./src/*"],
+      "@op/modules/plate/*": ["./src/*"]
     }
   },
   "include": ["vite.config.ts"]

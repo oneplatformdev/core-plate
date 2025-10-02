@@ -26,8 +26,7 @@
     /* aliases */
     "baseUrl": ".",
     "paths": {
-      "@op/modules/plate/*": ["./src/*"],
-      "@/*": ["./src/*"]
+      "@op/modules/plate/*": ["./src/*"]
     }
   },
   "include": ["src", "src/_types"]

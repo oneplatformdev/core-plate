@@ -34,7 +34,7 @@ import {
   useOpenState,
 } from './dropdown-menu';
 import { FloatingInput } from './input';
-import { useUploadState } from '@/hooks/use-upload-state';
+import { useUploadState } from '../hooks/use-upload-state';
 
 type EditorWithMediaInsert = PlateEditor & {
   tf: {

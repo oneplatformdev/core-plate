@@ -1,6 +1,6 @@
 import { useContext } from "react";
 
-import { UploadStateContext } from "@/context/UploadStateContext";
+import { UploadStateContext } from "../context/UploadStateContext";
 
 export const useUploadState = () => {
   const context = useContext(UploadStateContext);

@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 import { FileUploadContext } from "@op/modules/plate/context/FileUploadContext.ts";
 
-import { useUploadState } from '@/hooks/use-upload-state';
+import { useUploadState } from '../hooks/use-upload-state';
 
 export interface UploadedFile<T = unknown> extends ClientUploadedFileData<T> {}
 

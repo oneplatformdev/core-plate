@@ -18,10 +18,11 @@ const distPkg = {
   module: "./index.js",
   types: "./index.d.ts",
 
-  exports: rootPkg.exports,   // вже без префіксів dist/
+  exports: rootPkg.exports,
   sideEffects: rootPkg.sideEffects,
   peerDependencies: rootPkg.peerDependencies,
-  dependencies: rootPkg.dependencies ? {} : undefined, // у бібліотеки краще порожньо
+  dependencies: rootPkg.dependencies,
+  devDependencies: rootPkg.devDependencies
 };
 
 fs.mkdirSync(dist, { recursive: true });
