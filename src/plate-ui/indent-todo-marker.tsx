@@ -2,7 +2,7 @@
 
 import type { SlateRenderElementProps } from '@udecode/plate-common';
 
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import {
   useIndentTodoListElement,
   useIndentTodoListElementState,

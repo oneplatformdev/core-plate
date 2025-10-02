@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import { Check } from 'lucide-react';
 
 export function CheckboxStatic({

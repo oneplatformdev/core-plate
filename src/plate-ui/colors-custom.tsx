@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import { useColorsCustom, useColorsCustomState, } from '@udecode/plate-font/react';
 import { PlusIcon } from 'lucide-react';
 import type { ComponentPropsWithoutRef } from 'react';

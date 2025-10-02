@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import {
   useAlignDropdownMenu,
   useAlignDropdownMenuState,

@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import { withRef } from '@udecode/plate-common/react';
 
 import { PlateElement } from './plate-element';

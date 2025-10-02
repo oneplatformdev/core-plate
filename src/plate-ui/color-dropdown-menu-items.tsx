@@ -4,7 +4,7 @@ import React from 'react';
 
 import type { DropdownMenuItemProps } from '@radix-ui/react-dropdown-menu';
 
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import { Check } from 'lucide-react';
 
 import { buttonVariants } from './button';

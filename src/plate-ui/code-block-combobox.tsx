@@ -48,7 +48,7 @@ import 'prismjs/components/prism-tsx.js';
 import 'prismjs/components/prism-typescript.js';
 import 'prismjs/components/prism-wasm.js';
 import 'prismjs/components/prism-yaml.js';
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import { useCodeBlockCombobox, useCodeBlockComboboxState, } from '@udecode/plate-code-block/react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 // Prism must be imported before all language files

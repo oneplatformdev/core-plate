@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import { isCollapsed } from '@udecode/plate-common';
 import {
   type CursorData,

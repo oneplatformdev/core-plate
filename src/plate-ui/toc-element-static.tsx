@@ -1,4 +1,4 @@
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import type { SlateEditor, SlateElementProps, TElement, } from '@udecode/plate-common';
 import { getNodeEntries, getNodeString, SlateElement, } from '@udecode/plate-common';
 import { BaseTocPlugin, type Heading, HEADING_KEYS, isHeading, } from '@udecode/plate-heading';

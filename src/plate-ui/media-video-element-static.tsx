@@ -1,4 +1,4 @@
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import type { TCaptionElement } from '@udecode/plate-caption';
 import type { SlateElementProps } from '@udecode/plate-common';
 import { getNodeString, SlateElement } from '@udecode/plate-common';

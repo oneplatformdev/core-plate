@@ -1,4 +1,4 @@
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import { PlateStatic, type PlateStaticProps } from '@udecode/plate-common';
 import type { VariantProps } from 'class-variance-authority';
 import { cva } from 'class-variance-authority';

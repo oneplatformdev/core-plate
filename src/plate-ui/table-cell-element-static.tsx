@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { SlateElementProps } from '@udecode/plate-common';
 
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import {
   SlateElement,
   findNode,

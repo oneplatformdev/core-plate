@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import { EmojiSettings } from '@udecode/plate-emoji';
 import type { UseEmojiPickerType } from '@udecode/plate-emoji/react';
 

@@ -1,4 +1,4 @@
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import type { SlateRenderElementProps } from '@udecode/plate-common';
 
 import { CheckboxStatic } from './checkbox-static';

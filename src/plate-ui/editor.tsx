@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import type { PlateContentProps, PlateEditor } from '@udecode/plate-common/react';
 import { PlateContent, useEditorContainerRef, useEditorRef, } from '@udecode/plate-common/react';
 import { useEditorState } from "@udecode/plate-core/react";

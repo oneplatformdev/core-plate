@@ -5,10 +5,8 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { resolve, join, extname, relative } from 'node:path'
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
-
 import dts from 'vite-plugin-dts';
 import { globSync } from 'glob';
-import { external_1 } from "./external_1.ts";
 import { external } from "./external.ts";
 
 // https://vite.dev/config/
@@ -69,13 +67,7 @@ export default defineConfig(() => ({
 			output: {
 				preserveModules: true,
 				preserveModulesRoot: 'src',
-				exports: 'named',
-				globals: {
-					path: 'path',
-					react: 'React',
-					'react-dom': 'ReactDOM',
-					tailwindcss: 'tailwindcss'
-				}
+				exports: 'named'
 			}
 		},
 		minify: 'esbuild',

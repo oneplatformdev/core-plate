@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import { useFormInputProps } from '@udecode/plate-common/react';
 import { flip, offset, type UseVirtualFloatingOptions, } from '@udecode/plate-floating';
 import {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useUploadFile } from '@op/modules/plate/lib/uploadthing';
-import { cn } from '@udecode/cn';
+import { cn } from '@oneplatformdev/utils';
 import { insertNodes, removeNodes, withoutSavingHistory, } from '@udecode/plate-common';
 import { findPath, useEditorPlugin, withHOC, withRef, } from '@udecode/plate-common/react';
 import type { TPlaceholderElement } from '@udecode/plate-media';
