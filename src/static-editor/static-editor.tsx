@@ -210,7 +210,7 @@ interface IStaticEditorProps extends React.HTMLAttributes<HTMLDivElement> {
     value: Value
 }
 
-export const StaticEditor: React.FC<IStaticEditorProps> = ({ value, ...props }) => {
+export const StaticEditor: React.FC<IStaticEditorProps> = ({ value = [], ...props }) => {
     const editor = createEditor(value);
 
     return (
