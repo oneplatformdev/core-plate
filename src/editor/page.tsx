@@ -209,7 +209,7 @@ export const SlateToHtmlBlock: React.FC<any> = (editor: any) => {
                 editorHtml,
                 theme: 'light',
             });
-            console.log(html);
+            console.debug(html);
         } catch (error) {
             console.error(error);
         }
