@@ -2,6 +2,7 @@
   "name": "@oneplatformdev/plate",
   "version": "0.0.44",
   "description": "plate library",
+  "licenses": "MIT",
   "author": "One Platform Development Team",
   "keywords": [
     "react",
