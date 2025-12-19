@@ -1,5 +1,5 @@
 
-interface IPinToolbarOptions {
+export interface IPinToolbarOptions {
 	toolbarSelector?: string;
 	textboxSelector?: string;
 	containerSelector: string;
@@ -26,8 +26,12 @@ export function pinToolbar(opts: IPinToolbarOptions) {
 		debug = false,
 	} = opts;
 
-	if (!toolbarSelector || !containerSelector) {
-		console.warn('pinToolbar: toolbar or container selectors not provided');
+	if (!containerSelector) {
+		console.warn('[pinToolbar]: container selectors not provided');
+		return () => {};
+	}
+	if (!toolbarSelector) {
+		console.warn('[pinToolbar]: toolbar selectors not provided');
 		return () => {};
 	}
 
@@ -35,8 +39,12 @@ export function pinToolbar(opts: IPinToolbarOptions) {
 	const textbox = document.querySelector<HTMLElement>(textboxSelector);
 	const container = document.querySelector<HTMLElement>(containerSelector);
 
-	if (!toolbar || !container) {
-		console.warn('pinToolbar: toolbar or container not found');
+	if (!container) {
+		console.warn('[pinToolbar]: container not found');
+		return () => {};
+	}
+	if (!toolbar) {
+		console.warn('[pinToolbar]: toolbar not found');
 		return () => {};
 	}
 

@@ -1,6 +1,6 @@
 'use client';
 import { type IUseCreateEditorProps, useCreateEditor } from '@op/modules/plate/editor/use-create-editor';
-import { pinToolbar } from "@op/modules/plate/lib/pitToolbar.ts";
+import { type IPinToolbarOptions, pinToolbar } from "@op/modules/plate/lib/pitToolbar.ts";
 import { Editor, EditorContainer, type EditorProps } from '@op/modules/plate/plate-ui/editor';
 import { Plate } from '@udecode/plate-common/react';
 import { useEffect } from 'react';
@@ -19,6 +19,7 @@ export interface PlateEditorProps
 		Pick<IUseCreateEditorProps, 'initialValue'> {
 	isSimpleEditor?: boolean;
 	className?: React.HTMLAttributes<HTMLDivElement>["className"];
+	pinToolbarProps?: IPinToolbarOptions,
 }
 
 export const PlateEditor = (props: PlateEditorProps) => {
@@ -27,13 +28,16 @@ export const PlateEditor = (props: PlateEditorProps) => {
 		onUploadFile,
 		onChangeValues,
 		isSimpleEditor = false,
-		className
+		className,
+		pinToolbarProps,
+
 	} = props;
 	const editor = useCreateEditor({ initialValue, isSimpleEditor });
 
 	useEffect(() => {
 		const cleanup = pinToolbar({
 			containerSelector: 'container-layout',
+			...pinToolbarProps,
 		});
 		return cleanup;
 	}, []);
