@@ -107,7 +107,6 @@ export const editorPlugins = [
 	// Media
 	ImagePlugin,
 	VideoPlugin,
-	// videoPlugin,
 	AudioPlugin,
 	FilePlugin,
 	MediaEmbedPlugin,

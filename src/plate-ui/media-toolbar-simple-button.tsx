@@ -10,7 +10,7 @@ import {
 import { ImageIcon, LinkIcon } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { useNotify } from "@oneplatformdev/ui/Toast";
 import { useFilePicker } from 'use-file-picker';
 
 import { Button } from '@oneplatformdev/ui';
@@ -140,10 +140,11 @@ function MediaUrlDialogContent({
 }) {
   const { t } = useTranslation('lms');
   const editor = useEditorRef();
+  const { notifyToast } = useNotify();
   const [url, setUrl] = useState('');
 
   const embedMedia = useCallback(() => {
-    if (!isUrl(url)) return toast.error('Invalid URL');
+    if (!isUrl(url)) return notifyToast('Invalid URL', 'destructive');
 
     setOpen(false);
     insertNodes(editor, {

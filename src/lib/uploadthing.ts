@@ -1,9 +1,9 @@
 import type { OurFileRouter } from '@op/modules/plate/api/uploadthing/route';
 import { generateReactHelpers } from '@uploadthing/react';
 import React, { useContext } from 'react';
-import { toast } from 'sonner';
 import type { ClientUploadedFileData, UploadFilesOptions, } from 'uploadthing/types';
 import { z } from 'zod';
+import { useNotify } from "@oneplatformdev/ui/Toast";
 
 import { FileUploadContext } from "@op/modules/plate/context/FileUploadContext.ts";
 
@@ -31,6 +31,7 @@ export function useUploadFile({
   const [isUploading, setIsUploading] = React.useState(false);
   const { onUploadFile } = useContext(FileUploadContext);
   const { setGlobalUploading } = useUploadState();
+  const { notifyToast } = useNotify();
 
   async function uploadThing(file: File) {
     setIsUploading(true);
@@ -52,8 +53,12 @@ export function useUploadFile({
       }
 
       const res = await onUploadFile?.(file);
-      if(!res) {
-        throw new Error('Unknown error with file upload');
+
+      if (!res || ('isError' in res && res.isError)) {
+        const message = res && 'message' in res && typeof res.message === 'string' && res.message
+          ? res.message
+          : 'File upload failed';
+        throw new Error(message);
       }
 
       const fileRes: UploadedFile = {
@@ -81,39 +86,11 @@ export function useUploadFile({
           ? errorMessage
           : 'Something went wrong, please try again later.';
 
-      toast.error(message);
+      notifyToast(message, 'destructive');
 
       onUploadError?.(error);
       setUploadedFile(undefined);
       return;
-
-      // Mock upload for unauthenticated users
-      // toast.info('User not logged in. Mocking upload process.');
-      const mockUploadedFile = {
-        key: 'mock-key-0',
-        appUrl: `https://mock-app-url.com/${file.name}`,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        url: URL.createObjectURL(file),
-      } as UploadedFile;
-
-      // Simulate upload progress
-      let progress = 0;
-
-      const simulateProgress = async () => {
-        while (progress < 100) {
-          await new Promise((resolve) => setTimeout(resolve, 50));
-          progress += 2;
-          setProgress(Math.min(progress, 100));
-        }
-      };
-
-      await simulateProgress();
-
-      setUploadedFile(mockUploadedFile);
-
-      return mockUploadedFile;
     } finally {
       setProgress(0);
       setIsUploading(false);
@@ -150,8 +127,3 @@ export function getErrorMessage(err: unknown) {
   }
 }
 
-export function showErrorToast(err: unknown) {
-  const errorMessage = getErrorMessage(err);
-
-  return toast.error(errorMessage);
-}

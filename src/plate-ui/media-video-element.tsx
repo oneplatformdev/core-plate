@@ -7,7 +7,10 @@ import { parseTwitterUrl, parseVideoUrl } from '@udecode/plate-media';
 import { useMediaState } from '@udecode/plate-media/react';
 import { ResizableProvider, useResizableStore } from '@udecode/plate-resizable';
 import LiteYouTubeEmbed from 'react-lite-youtube-embed';
-import ReactPlayer from 'react-player';
+import _ReactPlayer from 'react-player';
+
+// Workaround: react-player (CJS) exports { default: ReactPlayer } при ESM імпорті
+const ReactPlayer = (_ReactPlayer as unknown as { default: typeof _ReactPlayer }).default || _ReactPlayer;
 
 import { Caption, CaptionTextarea } from './caption';
 import { PlateElement } from './plate-element';
