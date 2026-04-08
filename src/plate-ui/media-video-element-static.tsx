@@ -3,7 +3,6 @@ import type { TCaptionElement } from '@udecode/plate-caption';
 import type { SlateElementProps } from '@udecode/plate-common';
 import { getNodeString, SlateElement } from '@udecode/plate-common';
 import type { TVideoElement } from '@udecode/plate-media';
-import i18n from 'i18next';
 import { useEffect, useMemo, useState } from 'react';
 
 const isYouTube = (url: string) => url.includes('youtube.com') || url.includes('youtu.be');
@@ -104,7 +103,7 @@ const RenderVideo = (props: SlateElementProps) => {
 	}, [url]);
 
 	if (videoType === 'error') {
-		return <p className="text-red-500">{i18n.t('invalid_video_url')}</p>;
+		return <p className="text-red-500">Invalid video URL</p>;
 	}
 
 	if (videoType === 'video') {
