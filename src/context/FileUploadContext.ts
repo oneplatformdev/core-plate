@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import type { UploadError } from "@udecode/plate-media/react";
 
 export interface IMedia {
 	id: number;
@@ -28,6 +29,7 @@ export interface IFile {
 
 export interface IFileUploadContextValue<T = IFile | IMedia> {
   onUploadFile?: (file: File) => Promise<T>;
+  onUploadValidateError?: (error: UploadError) => void;
 }
 
 const defaultValue: IFileUploadContextValue<IFile | IMedia> = {

@@ -15,7 +15,7 @@ import {
 
 export interface PlateEditorProps
 	extends Pick<EditorProps, 'onChangeValues'>,
-		Pick<IFileUploadContextValue, 'onUploadFile'>,
+		Pick<IFileUploadContextValue, 'onUploadFile' | 'onUploadValidateError'>,
 		Pick<IUseCreateEditorProps, 'initialValue'> {
 	isSimpleEditor?: boolean;
 	className?: React.HTMLAttributes<HTMLDivElement>["className"];
@@ -26,6 +26,7 @@ export const PlateEditor = (props: PlateEditorProps) => {
 	const {
 		initialValue,
 		onUploadFile,
+		onUploadValidateError,
 		onChangeValues,
 		isSimpleEditor = false,
 		className,
@@ -48,7 +49,7 @@ export const PlateEditor = (props: PlateEditorProps) => {
 			className='border rounded-sm box-border relative overflow-hidden min-h-full'
 		>
 			<UploadStateProvider>
-				<FileUploadContext.Provider value={{ onUploadFile }}>
+				<FileUploadContext.Provider value={{ onUploadFile, onUploadValidateError }}>
 					<DndProvider backend={HTML5Backend}>
 						<Plate editor={editor}>
 							<EditorContainer>

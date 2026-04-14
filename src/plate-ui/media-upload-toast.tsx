@@ -1,79 +1,52 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 
 import { useEditorRef } from '@udecode/plate-common/react';
 import { PlaceholderPlugin, UploadErrorCode } from '@udecode/plate-media/react';
-import { useNotify } from "@oneplatformdev/ui/Toast";
-import i18n from "i18next";
+
+import { FileUploadContext } from "@op/modules/plate/context/FileUploadContext.ts";
 
 export const useUploadErrorToast = () => {
 	const editor = useEditorRef();
-	const { notifyToast } = useNotify();
-
-	const toast = (msg: string) => {
-		notifyToast(msg, 'destructive')
-	}
+	const { onUploadValidateError } = useContext(FileUploadContext);
 
 	const uploadError = editor.useOption(PlaceholderPlugin, 'error');
 
 	useEffect(() => {
 		if (!uploadError) return;
-		console.log('useUploadErrorToast => uploadError', uploadError);
 
-		const { code, data } = uploadError;
+		if (onUploadValidateError) {
+			onUploadValidateError(uploadError);
+		} else {
+			const { code, data } = uploadError;
 
-		switch (code) {
-			case UploadErrorCode.INVALID_FILE_SIZE: {
-				toast(
-					i18n.t('plate.media.invalidFileSize', {
-						ns: 'lms',
-						fileNames: data.files.map((f) => f.name).join(', ')
-					})
-				)
-				break;
-			}
-			case UploadErrorCode.INVALID_FILE_TYPE: {
-				toast(
-					i18n.t('plate.media.invalidFileType', {
-						ns: 'lms',
-						fileNames: data.files.map((f) => f.name).join(', ')
-					})
-				)
-				break;
-			}
-			case UploadErrorCode.TOO_LARGE: {
-				toast(
-					i18n.t('plate.media.invalidFileTooLarge', {
-						ns: 'lms',
-						fileNames: data.files.map((f) => f.name).join(', '),
-						maxFileSize: data.maxFileSize
-					})
-				)
-				break;
-			}
-			case UploadErrorCode.TOO_LESS_FILES: {
-				toast(
-					i18n.t('plate.media.invalidFileTooLessFiles', {
-						ns: 'lms',
-						minFileCount: data.minFileCount,
-						fileType: data.fileType
-					})
-				)
-				break;
-			}
-			case UploadErrorCode.TOO_MANY_FILES: {
-				toast(
-					i18n.t('plate.media.invalidFileTooManyFiles', {
-						ns: 'lms',
-						maxFileCount: data.maxFileCount,
-						fileType: data.fileType
-					})
-				)
-				break;
+			switch (code) {
+				case UploadErrorCode.INVALID_FILE_SIZE: {
+					alert(`Невірний розмір файлу: ${data.files.map((f) => f.name).join(', ')}`);
+					break;
+				}
+				case UploadErrorCode.INVALID_FILE_TYPE: {
+					alert(`Невірний тип файлу: ${data.files.map((f) => f.name).join(', ')}`);
+					break;
+				}
+				case UploadErrorCode.TOO_LARGE: {
+					alert(`Розмір файлу перевищує максимально допустимий ліміт (${data.maxFileSize}): ${data.files.map((f) => f.name).join(', ')}`);
+					break;
+				}
+				case UploadErrorCode.TOO_LESS_FILES: {
+					alert(`Мінімальна кількість файлів: ${data.minFileCount}`);
+					break;
+				}
+				case UploadErrorCode.TOO_MANY_FILES: {
+					alert(`Максимальна кількість файлів: ${data.maxFileCount}`);
+					break;
+				}
 			}
 		}
-	}, [ uploadError ]);
+
+		editor.setOption(PlaceholderPlugin, 'error', null);
+	}, [uploadError]);
 };
 
 export const MediaUploadToast = () => {

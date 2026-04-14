@@ -1,7 +1,5 @@
-import type { OurFileRouter } from '@op/modules/plate/api/uploadthing/route';
-import { generateReactHelpers } from '@uploadthing/react';
 import React, { useContext } from 'react';
-import type { ClientUploadedFileData, UploadFilesOptions, } from 'uploadthing/types';
+import type { ClientUploadedFileData } from 'uploadthing/types';
 import { z } from 'zod';
 import { useNotify } from "@oneplatformdev/ui/Toast";
 
@@ -11,11 +9,7 @@ import { useUploadState } from '../hooks/use-upload-state';
 
 export interface UploadedFile<T = unknown> extends ClientUploadedFileData<T> {}
 
-interface UseUploadFileProps
-  extends Pick<
-    UploadFilesOptions<OurFileRouter, keyof OurFileRouter>,
-    'headers' | 'onUploadBegin' | 'onUploadProgress' | 'skipPolling'
-  > {
+interface UseUploadFileProps {
   onUploadComplete?: (file: UploadedFile) => void;
   onUploadError?: (error: unknown) => void;
 }
@@ -23,7 +17,6 @@ interface UseUploadFileProps
 export function useUploadFile({
   onUploadComplete,
   onUploadError,
-  ...props
 }: UseUploadFileProps = {}) {
   const [uploadedFile, setUploadedFile] = React.useState<UploadedFile>();
   const [uploadingFile, setUploadingFile] = React.useState<File>();
@@ -39,19 +32,6 @@ export function useUploadFile({
     setUploadingFile(file);
 
     try {
-      try {
-        const uploadRes = await uploadFiles('editorUploader', {
-          ...props,
-          files: [file],
-          onUploadProgress: ({ progress }) => {
-            setProgress(Math.min(progress, 100));
-          },
-        });
-        console.log('uploadRes[0]', uploadRes[0]);
-      } catch (err) {
-        console.error(err);
-      }
-
       const res = await onUploadFile?.(file);
 
       if (!res || ('isError' in res && res.isError)) {
@@ -107,9 +87,6 @@ export function useUploadFile({
     uploadingFile,
   };
 }
-
-export const { uploadFiles, useUploadThing } =
-  generateReactHelpers<OurFileRouter>();
 
 export function getErrorMessage(err: unknown) {
   const unknownError = 'Something went wrong, please try again later.';
