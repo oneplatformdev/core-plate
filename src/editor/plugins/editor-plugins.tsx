@@ -131,7 +131,7 @@ export const editorPlugins = [
 					mediaType: ImagePlugin.key,
 					maxFileCount: 1,
 					minFileCount: 1,
-					maxFileSize: '128MB',
+					maxFileSize: '16MB',
 				},
 				pdf: {
 					mediaType: FilePlugin.key,
