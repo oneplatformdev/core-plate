@@ -56,7 +56,8 @@
     "dev:link": "node scripts/watch-local-package.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "prepublishOnly": "yarn build:ts"
+    "prepublishOnly": "yarn build:ts",
+    "release": "node --env-file=.env scripts/release.mjs"
   },
   "peerDependencies": {
     "class-variance-authority": "^0.7.0",
