@@ -25,7 +25,7 @@ There is no test runner configured.
 
 - `yarn release` — publishes to npm using `NPM_TOKEN` from `.env`. Forwards extra args to `npm publish`, so `yarn release --dry-run` validates without uploading and `yarn release --tag next` ships under a non-`latest` tag for soak-testing. Mechanics: `scripts/release.mjs` writes a temp `.npmrc` (mode 600) in `os.tmpdir()`, sets `NPM_CONFIG_USERCONFIG` to point at it, spawns `npm publish`, then deletes the temp file on exit (including SIGINT/SIGTERM). The token never lands in the repo or in shell history.
 - `.env` is gitignored; `.env.example` is the only checked-in template. Generate the token at `https://www.npmjs.com/settings/<user>/tokens` — prefer an "Automation" token so it bypasses the 2FA OTP step.
-- `prepublishOnly` runs `yarn build:ts` automatically, so a stale `dist/` cannot be shipped by accident.
+- The `release` script chains `yarn build:ts && node --env-file=.env scripts/release.mjs` so a stale `dist/` cannot be shipped through this entry point. Direct `npm publish` no longer auto-builds — always go through `yarn release` (or run `yarn build:ts` manually first).
 - After a successful publish: `git tag -a vX.Y.Z -m '...'` + `git push origin vX.Y.Z` + `gh release create vX.Y.Z --notes-file CHANGELOG.md --latest` for git/GitHub parity.
 
 ## Architecture
