@@ -23,12 +23,19 @@ There is no test runner configured.
 
 ### Release workflow
 
-- **Standard release**: `yarn release:patch` (or `:minor` / `:major`). Each one-liner runs `npm version <bump> -m 'chore(release): v%s'` (which edits `package.json`, creates a git commit, and tags `vX.Y.Z`), then `yarn release` (full build + publish via `scripts/release.mjs` using `NPM_TOKEN` from `.env`), then `git push --follow-tags` to land both the version commit and the tag on the remote. Bump up CHANGELOG.md before invoking — `npm version` does not edit it.
-- **Lower-level**: `yarn release` (no bump, just build + publish) and `yarn version:patch|minor|major` (just bump + tag, no publish). Useful when you need to recover from a half-finished release or republish with `--tag next` after a manual bump.
-- **Mechanics of `scripts/release.mjs`**: writes a temp `.npmrc` (mode 600) in `os.tmpdir()`, sets `NPM_CONFIG_USERCONFIG` to point at it, spawns `npm publish` with whatever extra args were passed (so `yarn release --dry-run` and `yarn release --tag next` both work), then deletes the temp file on exit (including SIGINT/SIGTERM). The token never lands in the repo or in shell history.
+Two parallel tracks: fast prerelease iteration on a `next` dist-tag for micro-fixes, and explicit semver-stable bumps for promotions.
+
+- **Quick prerelease iteration**: `yarn release` (default). Auto-runs `npm version prerelease --preid=next` (e.g. `0.1.0` → `0.1.1-next.0`, then `0.1.1-next.1`, …), builds, publishes under the `next` dist-tag, and `git push --follow-tags`. Use this for every micro-fix or in-progress change you want to share without promoting it to default — consumers stay on whatever `latest` they have until you promote.
+- **Stable promotion**: `yarn release:patch` (or `:minor` / `:major`). Bumps to a clean `vX.Y.Z` (no preid), builds, publishes to `latest`, pushes commit + tag. Run this when the prerelease has soaked enough.
+- **Lower-level escape hatches**:
+  - `yarn release:current` — build + publish whatever `package.json` already says, no version bump, no push. Used internally by all `release:*` flows but also useful when a previous release half-failed and you just need to retry the publish.
+  - `yarn version:prerelease|patch|minor|major` — just the bump + commit + tag, no publish. Useful for fixing a wrong bump before publish, or bumping in a separate commit.
+- **Mechanics of `scripts/release.mjs`**: writes a temp `.npmrc` (mode 600) in `os.tmpdir()`, sets `NPM_CONFIG_USERCONFIG` to point at it, spawns `npm publish` with whatever extra args were forwarded (so `--dry-run` and `--tag next` both flow through), then deletes the temp file on exit (including SIGINT/SIGTERM). Cross-platform via `shell: process.platform === 'win32'`. The token never lands in the repo or in shell history.
+- **Dist-tag semantics**: `latest` is what `npm install @oneplatformdev/plate` resolves to without a specifier; `next` is opt-in via `npm install @oneplatformdev/plate@next`. Consumers on `^0.1.0` do **not** auto-pull prereleases — they stay on the highest `latest` until you promote. This decoupling is the whole point of the two tracks.
 - **Secret handling**: `.env` is gitignored; `.env.example` is the only checked-in template. Generate the token at `https://www.npmjs.com/settings/<user>/tokens` — prefer an "Automation" token so it bypasses the 2FA OTP step.
-- **Stale-build safety**: the `release` script chains `yarn build:ts && node --env-file=.env scripts/release.mjs` so a stale `dist/` cannot be shipped through this entry point. Direct `npm publish` no longer auto-builds — always go through `yarn release` (or run `yarn build:ts` manually first).
-- **GitHub release** is still a manual step after pushing: `gh release create vX.Y.Z --notes-file CHANGELOG.md --latest`. Worth automating later (a `release:gh` script that reads the current version), but keeping it explicit means the human author confirms the changelog is up to date.
+- **Stale-build safety**: every release path goes through `yarn build:ts` (full type-check + Vite + dist prep) before `npm publish` is invoked. Direct `npm publish` does NOT auto-build — always go through `yarn release` / `yarn release:patch|minor|major` / `yarn release:current`.
+- **CHANGELOG.md** is not touched by `npm version`. Update it by hand before invoking a stable promotion (`release:patch|minor|major`); for prereleases it's optional but recommended for anything non-trivial.
+- **GitHub release** is still a manual step after pushing a stable: `gh release create vX.Y.Z --notes-file CHANGELOG.md --latest`. Skip for prereleases (they're noise on the GitHub timeline).
 
 ## Architecture
 

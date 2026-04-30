@@ -23,10 +23,16 @@ if (!token) {
   process.exit(1);
 }
 
+const REGISTRY = 'https://registry.npmjs.org/';
+
+// Write a self-contained npmrc that pins both the registry AND the auth token.
+// Pinning `registry=` avoids picking up the host machine's default (e.g. yarn
+// classic sets `registry.yarnpkg.com`, which has no record of this token and
+// fails the publish with `ENEEDAUTH`).
 const tmpRc = path.join(os.tmpdir(), `op-plate-publish-${process.pid}.npmrc`);
 fs.writeFileSync(
   tmpRc,
-  `//registry.npmjs.org/:_authToken=${token}\n`,
+  `registry=${REGISTRY}\n//registry.npmjs.org/:_authToken=${token}\n`,
   { mode: 0o600 }
 );
 
@@ -49,13 +55,24 @@ process.on('SIGTERM', () => {
 
 const forwardedArgs = process.argv.slice(2);
 
-const child = spawn('npm', ['publish', ...forwardedArgs], {
-  stdio: 'inherit',
-  env: { ...process.env, NPM_CONFIG_USERCONFIG: tmpRc },
-  // On Windows `npm` is `npm.cmd`; spawn cannot resolve `.cmd` without a shell.
-  shell: process.platform === 'win32',
-  windowsHide: true,
-});
+// CLI flag and env var are belt-and-suspenders alongside the temp .npmrc:
+// CLI args have the highest priority in npm config, so they override any
+// project-level .npmrc, env-var registry, or yarn-classic shim.
+const child = spawn(
+  'npm',
+  ['publish', `--registry=${REGISTRY}`, ...forwardedArgs],
+  {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      NPM_CONFIG_USERCONFIG: tmpRc,
+      NPM_CONFIG_REGISTRY: REGISTRY,
+    },
+    // On Windows `npm` is `npm.cmd`; spawn cannot resolve `.cmd` without a shell.
+    shell: process.platform === 'win32',
+    windowsHide: true,
+  }
+);
 
 child.on('exit', (code, signal) => {
   cleanup();

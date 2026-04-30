@@ -22,6 +22,7 @@
     "oneplatform"
   ],
   "type": "module",
+  "packageManager": "yarn@4.0.2",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -43,7 +44,8 @@
   ],
   "publishConfig": {
     "access": "public",
-    "provenance": false
+    "provenance": false,
+    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "dev": "vite",
@@ -56,13 +58,15 @@
     "dev:link": "node scripts/watch-local-package.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "release": "yarn build:ts && node --env-file=.env scripts/release.mjs",
+    "release": "yarn version:prerelease && yarn release:current --tag next && git push --follow-tags",
+    "release:current": "yarn build:ts && node --env-file=.env scripts/release.mjs",
+    "release:patch": "yarn version:patch && yarn release:current && git push --follow-tags",
+    "release:minor": "yarn version:minor && yarn release:current && git push --follow-tags",
+    "release:major": "yarn version:major && yarn release:current && git push --follow-tags",
+    "version:prerelease": "npm version prerelease --preid=next -m \"chore(release): v%s\"",
     "version:patch": "npm version patch -m \"chore(release): v%s\"",
     "version:minor": "npm version minor -m \"chore(release): v%s\"",
-    "version:major": "npm version major -m \"chore(release): v%s\"",
-    "release:patch": "yarn version:patch && yarn release && git push --follow-tags",
-    "release:minor": "yarn version:minor && yarn release && git push --follow-tags",
-    "release:major": "yarn version:major && yarn release && git push --follow-tags"
+    "version:major": "npm version major -m \"chore(release): v%s\""
   },
   "peerDependencies": {
     "class-variance-authority": "^0.7.0",
