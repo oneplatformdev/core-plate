@@ -3,7 +3,14 @@ import path from 'node:path';
 
 const rootDir = process.cwd();
 const distDir = path.join(rootDir, 'dist');
-const targetProjectArg = process.argv[2] ?? '../../oneplatform-client-admin';
+const targetProjectArg = process.argv[2];
+
+if (!targetProjectArg) {
+  throw new Error(
+    'Target project path is required. Usage: node scripts/sync-local-package.mjs <path-to-consumer>'
+  );
+}
+
 const targetProjectDir = path.resolve(rootDir, targetProjectArg);
 const targetPackageDir = path.join(
   targetProjectDir,

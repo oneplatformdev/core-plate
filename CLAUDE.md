@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`@oneplatformdev/plate` — a React component library wrapping [Plate.js](https://platejs.org) v53 to provide a configured rich-text editor (`PlateEditor`, `StaticEditor`, `EditorKit`) for OnePlatform apps. Distributed as an ESM package built with Vite in library mode and consumed primarily by `oneplatform-client-admin`.
+`@oneplatformdev/plate` — a React component library wrapping [Plate.js](https://platejs.org) v53 to provide a configured rich-text editor (`PlateEditor`, `StaticEditor`, `EditorKit`) for OnePlatform apps. Distributed as an ESM package built with Vite in library mode. The library is consumer-agnostic — do not encode paths to specific downstream projects in scripts or config.
 
 ## Commands
 
@@ -16,9 +16,8 @@ Package manager is **Yarn 4** (Berry, see `.yarnrc.yml`). Use `yarn`, not `npm`.
 - `yarn build:types` — Type-check only (`tsconfig.build.json`).
 - `yarn build:watch` — Vite library build in watch mode.
 - `yarn lint` — ESLint flat config (`eslint.config.js`).
-- `yarn build:client-admin` — Build then sync `dist/` into `../../oneplatform-client-admin/node_modules/@oneplatformdev/plate` via `scripts/sync-local-package.mjs`.
-- `yarn dev:client-admin` — Watch source/config and re-run build + sync into the consumer project (`scripts/watch-local-package.mjs`).
-- `yarn sync:client-admin [path]` — Sync existing `dist/` into a consumer project without rebuilding.
+- `yarn sync:link <path>` — Sync existing `dist/` into a consumer project's `node_modules/@oneplatformdev/plate`. Path is required.
+- `yarn dev:link <path>` — Watch source/config and re-run build + sync into the consumer project. Path is required.
 
 There is no test runner configured.
 
@@ -58,9 +57,9 @@ Plate v2 organizes plugins into "kits" — composable arrays of plugin instances
 
 ### Consumer integration workflow
 
-The consumer `oneplatform-client-admin` lives at `../../oneplatform-client-admin`. The standard local-development loop is:
+For local development against a consumer project without publishing to npm:
 
-1. `yarn dev:client-admin` here (watches `src/`, rebuilds `dist/`, syncs into the consumer's `node_modules/@oneplatformdev/plate`).
+1. `yarn dev:link <path-to-consumer>` — watches `src/`, rebuilds `dist/`, and syncs into `<consumer>/node_modules/@oneplatformdev/plate`.
 2. Run the consumer app's own dev server in a separate terminal — it picks up the synced files.
 
-For one-shot updates use `yarn build:client-admin`. The sync script preserves files in the target that don't exist in `dist/`, so it's safe against stale artifacts but won't clean unrelated files in the target's package dir.
+For a one-shot update: `yarn build && yarn sync:link <path-to-consumer>`. The sync script preserves files in the target that don't exist in `dist/`, so it's safe against stale artifacts but won't clean unrelated files in the target's package dir.

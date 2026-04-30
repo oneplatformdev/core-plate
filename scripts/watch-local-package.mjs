@@ -3,7 +3,13 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 
 const rootDir = process.cwd();
-const targetProjectArg = process.argv[2] ?? '../../oneplatform-client-admin';
+const targetProjectArg = process.argv[2];
+
+if (!targetProjectArg) {
+  throw new Error(
+    'Target project path is required. Usage: node scripts/watch-local-package.mjs <path-to-consumer>'
+  );
+}
 
 const watchRoots = [
   path.join(rootDir, 'src'),
