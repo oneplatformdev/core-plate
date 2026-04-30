@@ -17,6 +17,17 @@ dist-ssr
 .env.*
 !.env.example
 
+# yarn 4 (Berry) — ignore everything in .yarn except subfolders we actually
+# want to commit (yarn binary, plugins, patches, sdks, versions). install-state.gz
+# is a local resolver cache, regenerated on each `yarn install`.
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
