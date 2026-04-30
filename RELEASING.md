@@ -260,10 +260,8 @@ For when you need to debug or modify the flow.
 ## TL;DR
 
 ```bash
-# Daily iteration
-yarn release         # 0.1.X-next.N under `next` tag
-
-# Promote when ready
-yarn release:patch   # strips -next, publishes to `latest`
-gh release create vX.Y.Z --notes-file CHANGELOG.md --latest   # optional, GitHub-side
+yarn release          # 0.1.0 → 0.1.1-next.0  (next, повторюй для -next.1, -next.2, …)
+yarn release:patch    # 0.1.1-next.7 → 0.1.1  (latest)
+yarn release:minor    # 0.1.1-next.7 → 0.2.0  (latest)
+yarn release:major    # 0.1.1-next.7 → 1.0.0  (latest)
 ```
