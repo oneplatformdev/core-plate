@@ -1,7 +1,26 @@
 {
   "name": "@oneplatformdev/plate",
-  "version": "0.0.0",
-  "description": "Plate v2 editor library",
+  "version": "0.1.0",
+  "description": "Plate.js v53 rich-text editor preconfigured for OnePlatform apps",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oneplatformdev/core-plate.git"
+  },
+  "homepage": "https://github.com/oneplatformdev/core-plate#readme",
+  "bugs": {
+    "url": "https://github.com/oneplatformdev/core-plate/issues"
+  },
+  "keywords": [
+    "plate",
+    "platejs",
+    "editor",
+    "rich-text",
+    "react",
+    "wysiwyg",
+    "slate",
+    "oneplatform"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -16,9 +35,16 @@
     "./styles.scoped.css": "./dist/styles.scoped.css",
     "./package.json": "./dist/package.json"
   },
+  "sideEffects": [
+    "**/*.css"
+  ],
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": false
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/prepare-dist-pkg.mjs",
@@ -29,7 +55,8 @@
     "sync:link": "node scripts/sync-local-package.mjs",
     "dev:link": "node scripts/watch-local-package.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepublishOnly": "yarn build:ts"
   },
   "peerDependencies": {
     "class-variance-authority": "^0.7.0",
@@ -40,6 +67,11 @@
     "react-dom": ">=18 <20",
     "tailwind-merge": "^3.0.0",
     "zod": ">=3.0.0 <5"
+  },
+  "peerDependenciesMeta": {
+    "react-day-picker": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@ariakit/react": "^0.4.26",
@@ -79,10 +111,11 @@
     "@radix-ui/react-toolbar": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@udecode/cn": "^52.3.4",
-    "@uploadthing/react": "7.3.3",
     "cmdk": "^1.1.1",
+    "html2canvas-pro": "^1.5.8",
     "lodash.debounce": "^4.0.8",
     "lowlight": "^3.3.0",
+    "pdf-lib": "^1.17.1",
     "platejs": "^53.0.0",
     "radix-ui": "^1.4.3",
     "react-dnd": "^16.0.1",
@@ -115,6 +148,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
     "lucide-react": "^1.14.0",
+    "postcss": "^8.5.12",
     "react": "^19.2.5",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.5",

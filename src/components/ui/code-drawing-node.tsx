@@ -522,7 +522,6 @@ function CodeDrawingPreviewArea({
   loading,
   code,
   viewMode,
-  readOnly: _readOnly = false,
   isMobile = false,
   showBorder = false,
   toolbar,

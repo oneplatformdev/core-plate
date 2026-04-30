@@ -3,11 +3,7 @@
 import { KEYS } from 'platejs';
 import { BlockPlaceholderPlugin } from 'platejs/react';
 
-export const DEFAULT_BLOCK_PLACEHOLDER = 'Type something test...';
-
-export const createBlockPlaceholderKit = (
-  placeholder = DEFAULT_BLOCK_PLACEHOLDER
-) => [
+export const createBlockPlaceholderKit = (placeholder = '') => [
   BlockPlaceholderPlugin.configure({
     options: {
       className:

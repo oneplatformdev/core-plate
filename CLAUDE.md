@@ -63,3 +63,29 @@ For local development against a consumer project without publishing to npm:
 2. Run the consumer app's own dev server in a separate terminal — it picks up the synced files.
 
 For a one-shot update: `yarn build && yarn sync:link <path-to-consumer>`. The sync script preserves files in the target that don't exist in `dist/`, so it's safe against stale artifacts but won't clean unrelated files in the target's package dir.
+
+## Roadmap (post-`0.1.0`)
+
+Items deferred from the release-prep pass. Tackle them when the relevant pain shows up — none of these block consumers using the library today.
+
+### Build & developer experience
+
+- **`vite-plugin-dts` dominates build time (~91 %).** A clean `yarn build` is ~9 s; the dts step alone is ~8 s. Acceptable for a one-off publish, painful inside `yarn dev:link` where every save re-runs it. Try `dts({ skipDiagnostics: true })` (relies on `tsc` for type-checking elsewhere) and/or enable its incremental cache. If that still isn't enough, swap to `tsc --emitDeclarationOnly` in watch mode and drop the dts plugin entirely.
+- **CSS pipeline question raised by `feat/3012` in `oneplatform-client-admin`.** That branch reverted from the Tailwind v4 `@source` integration back to importing `@oneplatformdev/plate/styles.scoped.css`. Until we know *why* (CSS-variable collisions? Tailwind compile cost? class-name leaks?) we keep both entry points around. Action item: pair with whoever owns `feat/3012`, capture the actual failure mode, decide whether the Tailwind `@source` path stays the recommended integration or whether scoped CSS becomes the canonical answer.
+
+### Quality gaps (not blockers, but you'll regret it)
+
+- **No tests.** Bare minimum: a Vitest `render(<PlateEditor />)` smoke test plus a `StaticEditor` snapshot fed a representative `EditorValue`. Add `vitest` + `@testing-library/react` + `jsdom`. Each future bug-fix should land with a regression test instead of a comment.
+- **No CI.** Add `.github/workflows/ci.yml` that runs `yarn lint`, `yarn build:types`, and `yarn build` on every PR. Once tests exist, gate them too. Cache `~/.yarn/cache` and `node_modules/.vite` to keep runs under a minute.
+- **18 lint warnings still on disk.** 15 × `@typescript-eslint/no-explicit-any` and 3 × `react-hooks/exhaustive-deps`. Won't fail builds, but they're real type leaks and stale-closure risks. Pick them off opportunistically when touching neighbouring code.
+
+### Release infrastructure (do before second publish)
+
+- **`provenance: true` in `publishConfig`.** Currently `false` to avoid OIDC complexity on the first manual publish. Once a GitHub Actions release workflow exists, flip this on — npm signs the tarball with sigstore and the package gets a verified-publisher badge. Requires `id-token: write` permission in the workflow and a publish step that uses `npm publish --provenance`.
+- **First publish playbook.** First `npm publish` for a scoped package needs `--access public` (already set via `publishConfig.access`), `npm login` with 2FA on the publishing account, and a `git tag v0.1.0 && git push --tags`. Document the exact sequence in `RELEASING.md` once it's been done once and the gotchas are known. Subsequent publishes can be automated through Actions.
+- **Bumping `oneplatform-client-admin`.** Consumer is currently on `^0.0.55`. After the first `0.1.0` publish, open a PR there bumping to `^0.1.0`. Expect to handle three migrations: rename `MyValue` → `EditorValue`, drop the `MyEditor` import (use `useEditor()` return type), and verify the `feat/3012` `styles.scoped.css` import still resolves.
+
+### Architecture follow-ups
+
+- **`createUploadthing()` server scaffolding was deleted in `0.1.0`.** The library no longer ships a router. Confirm with consumers that they all wire their own `onUploadFile` through `FileUploadContext` or `<PlateEditor onUploadFile={...} />`. If a future consumer needs the server piece back, ship it as a separate subpath export (e.g. `@oneplatformdev/plate/server`) so it never enters the client bundle.
+- **`MyEditor` was unexported in `0.1.0`.** If a real use case for a stable editor type appears, expose it via a hand-written union of plugin configs (`type EditorInstance = TPlateEditor<EditorValue, EditorPlugin>` where `EditorPlugin` is an explicit list) — never via `(typeof EditorKit)[number]`, which makes every kit change a major version bump.

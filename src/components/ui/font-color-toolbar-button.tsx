@@ -1,5 +1,4 @@
 'use client';
-/* eslint-disable react-hooks/refs -- Ref usage for color picker component refs */
 
 import React from 'react';
 
@@ -376,9 +375,8 @@ function ColorCustom({
     [customColor, fullCustomColors, customColors]
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const updateCustomColorDebounced = React.useCallback(
-    debounce(updateCustomColor, 100),
+  const updateCustomColorDebounced = React.useMemo(
+    () => debounce(updateCustomColor, 100),
     [updateCustomColor]
   );
 

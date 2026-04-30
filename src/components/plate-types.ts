@@ -22,69 +22,69 @@ import type {
   TTextAlignProps,
 } from 'platejs';
 
-export interface MyBlockElement extends TElement, TListProps {
+export interface EditorBlockElement extends TElement, TListProps {
   id?: string;
 }
 
-export interface MyTextBlockElement
+export interface EditorTextBlockElement
   extends TElement,
     TLineHeightProps,
     TTextAlignProps {
   children: (
-    | MyLinkElement
-    | MyMentionElement
-    | MyMentionInputElement
-    | RichText
+    | EditorLinkElement
+    | EditorMentionElement
+    | EditorMentionInputElement
+    | EditorRichText
   )[];
 }
 
-export interface MyBlockquoteElement extends MyTextBlockElement {
+export interface EditorBlockquoteElement extends EditorTextBlockElement {
   type: typeof KEYS.blockquote;
 }
 
-export interface MyCodeBlockElement extends MyBlockElement {
-  children: MyCodeLineElement[];
+export interface EditorCodeBlockElement extends EditorBlockElement {
+  children: EditorCodeLineElement[];
   type: typeof KEYS.codeBlock;
 }
 
-export interface MyCodeLineElement extends TElement {
+export interface EditorCodeLineElement extends TElement {
   children: PlainText[];
   type: typeof KEYS.codeLine;
 }
 
-export interface MyH1Element extends MyTextBlockElement {
+export interface EditorH1Element extends EditorTextBlockElement {
   type: typeof KEYS.h1;
 }
 
-export interface MyH2Element extends MyTextBlockElement {
+export interface EditorH2Element extends EditorTextBlockElement {
   type: typeof KEYS.h2;
 }
 
 /** Block props */
 
-export interface MyH3Element extends MyTextBlockElement {
+export interface EditorH3Element extends EditorTextBlockElement {
   type: typeof KEYS.h3;
 }
 
-export interface MyH4Element extends MyTextBlockElement {
+export interface EditorH4Element extends EditorTextBlockElement {
   type: typeof KEYS.h4;
 }
 
-export interface MyH5Element extends MyTextBlockElement {
+export interface EditorH5Element extends EditorTextBlockElement {
   type: typeof KEYS.h5;
 }
 
-export interface MyH6Element extends MyTextBlockElement {
+export interface EditorH6Element extends EditorTextBlockElement {
   type: typeof KEYS.h6;
 }
 
-export interface MyHrElement extends MyBlockElement {
+export interface EditorHrElement extends EditorBlockElement {
   children: [EmptyText];
   type: typeof KEYS.hr;
 }
 
-export interface MyImageElement
-  extends MyBlockElement,
+export interface EditorImageElement
+  extends EditorBlockElement,
     TCaptionProps,
     TImageElement,
     TResizableProps {
@@ -92,13 +92,13 @@ export interface MyImageElement
   type: typeof KEYS.img;
 }
 
-export interface MyLinkElement extends TLinkElement {
-  children: RichText[];
+export interface EditorLinkElement extends TLinkElement {
+  children: EditorRichText[];
   type: typeof KEYS.link;
 }
 
-export interface MyMediaEmbedElement
-  extends MyBlockElement,
+export interface EditorMediaEmbedElement
+  extends EditorBlockElement,
     TCaptionProps,
     TMediaEmbedElement,
     TResizableProps {
@@ -106,58 +106,62 @@ export interface MyMediaEmbedElement
   type: typeof KEYS.mediaEmbed;
 }
 
-export interface MyMentionElement extends TMentionElement {
+export interface EditorMentionElement extends TMentionElement {
   children: [EmptyText];
   type: typeof KEYS.mention;
 }
 
-export interface MyMentionInputElement extends TComboboxInputElement {
+export interface EditorMentionInputElement extends TComboboxInputElement {
   children: [PlainText];
   type: typeof KEYS.mentionInput;
 }
 
-export type MyNestableBlock = MyParagraphElement;
+export type EditorNestableBlock = EditorParagraphElement;
 
-export interface MyParagraphElement extends MyTextBlockElement {
+export interface EditorParagraphElement extends EditorTextBlockElement {
   type: typeof KEYS.p;
 }
 
-export interface MyTableCellElement extends TElement {
-  children: MyNestableBlock[];
+export interface EditorTableCellElement extends TElement {
+  children: EditorNestableBlock[];
   type: typeof KEYS.td;
 }
 
-export interface MyTableElement extends MyBlockElement, TTableElement {
-  children: MyTableRowElement[];
+export interface EditorTableElement extends EditorBlockElement, TTableElement {
+  children: EditorTableRowElement[];
   type: typeof KEYS.table;
 }
 
-export interface MyTableRowElement extends TElement {
-  children: MyTableCellElement[];
+export interface EditorTableRowElement extends TElement {
+  children: EditorTableCellElement[];
   type: typeof KEYS.tr;
 }
 
-export interface MyToggleElement extends MyTextBlockElement {
+export interface EditorToggleElement extends EditorTextBlockElement {
   type: typeof KEYS.toggle;
 }
 
-export interface RichText extends TBasicMarks, TCommentText, TFontMarks, TText {
+export interface EditorRichText
+  extends TBasicMarks,
+    TCommentText,
+    TFontMarks,
+    TText {
   kbd?: boolean;
 }
 
-export type MyValue = (
-  | MyBlockquoteElement
-  | MyCodeBlockElement
-  | MyH1Element
-  | MyH2Element
-  | MyH3Element
-  | MyH4Element
-  | MyH5Element
-  | MyH6Element
-  | MyHrElement
-  | MyImageElement
-  | MyMediaEmbedElement
-  | MyParagraphElement
-  | MyTableElement
-  | MyToggleElement
+export type EditorValue = (
+  | EditorBlockquoteElement
+  | EditorCodeBlockElement
+  | EditorH1Element
+  | EditorH2Element
+  | EditorH3Element
+  | EditorH4Element
+  | EditorH5Element
+  | EditorH6Element
+  | EditorHrElement
+  | EditorImageElement
+  | EditorMediaEmbedElement
+  | EditorParagraphElement
+  | EditorTableElement
+  | EditorToggleElement
 )[];

@@ -1,23 +1,14 @@
 import * as React from 'react';
 
 import { FileUploadContext, type UploadResultLike } from '@/context/file-upload-context';
-import type { OurFileRouter } from '@/lib/uploadthing';
-import type {
-  ClientUploadedFileData,
-  UploadFilesOptions,
-} from 'uploadthing/types';
+import type { ClientUploadedFileData } from 'uploadthing/types';
 
-import { generateReactHelpers } from '@uploadthing/react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 export type UploadedFile<T = unknown> = ClientUploadedFileData<T>;
 
-interface UseUploadFileProps
-  extends Pick<
-    UploadFilesOptions<OurFileRouter['editorUploader']>,
-    'headers' | 'onUploadBegin' | 'onUploadProgress' | 'skipPolling'
-  > {
+interface UseUploadFileProps {
   onUploadComplete?: (file: UploadedFile) => void;
   onUploadError?: (error: unknown) => void;
 }
@@ -25,7 +16,6 @@ interface UseUploadFileProps
 export function useUploadFile({
   onUploadComplete,
   onUploadError,
-  ...props
 }: UseUploadFileProps = {}) {
   const { onUploadFile: uploadWithConsumer } = React.useContext(FileUploadContext);
   const [uploadedFile, setUploadedFile] = React.useState<UploadedFile>();
@@ -74,32 +64,23 @@ export function useUploadFile({
     setUploadingFile(file);
 
     try {
-      if (uploadWithConsumer) {
-        const uploaded = await uploadWithConsumer(file);
-        const normalized = normalizeUploadedFile(
-          file,
-          (uploaded ?? {}) as UploadResultLike
+      if (!uploadWithConsumer) {
+        throw new Error(
+          'useUploadFile: no upload handler is configured. Wrap the editor in <FileUploadContext.Provider value={{ onUploadFile }}> or pass `onUploadFile` to <PlateEditor />.'
         );
-
-        setUploadedFile(normalized);
-        onUploadComplete?.(normalized);
-        setProgress(100);
-
-        return normalized;
       }
 
-      const res = await uploadFiles('editorUploader', {
-        ...props,
-        files: [file],
-        onUploadProgress: ({ progress }) => {
-          setProgress(Math.min(progress, 100));
-        },
-      });
+      const uploaded = await uploadWithConsumer(file);
+      const normalized = normalizeUploadedFile(
+        file,
+        (uploaded ?? {}) as UploadResultLike
+      );
 
-      setUploadedFile(res[0]);
-      onUploadComplete?.(res[0]);
+      setUploadedFile(normalized);
+      onUploadComplete?.(normalized);
+      setProgress(100);
 
-      return res[0];
+      return normalized;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
 
@@ -154,9 +135,6 @@ export function useUploadFile({
     uploadingFile,
   };
 }
-
-export const { uploadFiles, useUploadThing } =
-  generateReactHelpers<OurFileRouter>();
 
 export function getErrorMessage(err: unknown) {
   const unknownError = 'Something went wrong, please try again later.';

@@ -128,39 +128,26 @@ export function PlateEditor({
               <Plate
                 editor={editor}
                 onValueChange={({ value: nextValue }) => {
-                console.debug('[core-plate-v2] Plate onValueChange', {
-                  debounceMs: onChangeDebounceMs,
-                  hasExternalHandler: Boolean(onChangeValuesRef.current),
-                  timestamp: performance.now(),
-                });
+                  if (!onChangeValuesRef.current) return;
 
-                if (!onChangeValuesRef.current) return;
+                  if (onChangeDebounceMs <= 0) {
+                    onChangeValuesRef.current(nextValue);
+                    return;
+                  }
 
-                if (onChangeDebounceMs <= 0) {
-                  console.debug('[core-plate-v2] onChangeValues immediate', {
-                    timestamp: performance.now(),
-                  });
-                  onChangeValuesRef.current(nextValue);
-                  return;
-                }
+                  pendingValueRef.current = nextValue;
 
-                pendingValueRef.current = nextValue;
+                  if (debounceTimeoutRef.current) {
+                    clearTimeout(debounceTimeoutRef.current);
+                  }
 
-                if (debounceTimeoutRef.current) {
-                  clearTimeout(debounceTimeoutRef.current);
-                }
+                  debounceTimeoutRef.current = setTimeout(() => {
+                    if (!pendingValueRef.current) return;
 
-                debounceTimeoutRef.current = setTimeout(() => {
-                  if (!pendingValueRef.current) return;
-
-                  console.debug('[core-plate-v2] onChangeValues debounced flush', {
-                    debounceMs: onChangeDebounceMs,
-                    timestamp: performance.now(),
-                  });
-                  onChangeValuesRef.current?.(pendingValueRef.current);
-                  pendingValueRef.current = null;
-                  debounceTimeoutRef.current = null;
-                }, onChangeDebounceMs);
+                    onChangeValuesRef.current?.(pendingValueRef.current);
+                    pendingValueRef.current = null;
+                    debounceTimeoutRef.current = null;
+                  }, onChangeDebounceMs);
                 }}
               >
                 <EditorContainer className={containerClassName} variant={containerVariant}>

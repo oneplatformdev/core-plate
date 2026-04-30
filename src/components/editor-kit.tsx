@@ -8,7 +8,6 @@ import { AutoformatKit } from '@/components/autoformat-kit';
 import { BasicBlocksKit } from '@/components/basic-blocks-kit';
 import { BasicMarksKit } from '@/components/basic-marks-kit';
 import { createBlockPlaceholderKit } from '@/components/block-placeholder-kit';
-export { DEFAULT_BLOCK_PLACEHOLDER } from '@/components/block-placeholder-kit';
 import { CalloutKit } from '@/components/callout-kit';
 import { CodeBlockKit } from '@/components/code-block-kit';
 import { ColumnKit } from '@/components/column-kit';
@@ -78,6 +77,9 @@ export const createEditorKit = (placeholder?: string) => [
 
 export const EditorKit = createEditorKit();
 
-export type MyEditor = TPlateEditor<Value, (typeof EditorKit)[number]>;
+// Internal — the concrete editor type depends on the kit composition above and
+// is not part of the stable public API. Consumers receive the editor through
+// `useEditor()` instead of importing the type directly.
+type EditorInstance = TPlateEditor<Value, (typeof EditorKit)[number]>;
 
-export const useEditor = () => useEditorRef<MyEditor>();
+export const useEditor = () => useEditorRef<EditorInstance>();

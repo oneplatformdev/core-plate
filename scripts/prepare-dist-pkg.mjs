@@ -11,6 +11,71 @@ if (!fs.existsSync(distDir)) {
   throw new Error('dist directory does not exist. Run the build first.');
 }
 
+// `vite-plugin-dts` (configured with `entryRoot: 'src'`) emits declaration
+// files under `dist/src/`. Flatten them into `dist/` so the published layout
+// matches the JS output (e.g. `dist/index.d.ts` next to `dist/index.js`), then
+// rewrite any `../foo` references that came from the lifted nesting level.
+const tscEmitDir = path.join(distDir, 'src');
+if (fs.existsSync(tscEmitDir)) {
+  const moveDeclarationFiles = (fromDir, toDir) => {
+    for (const entry of fs.readdirSync(fromDir, { withFileTypes: true })) {
+      const fromPath = path.join(fromDir, entry.name);
+      const toPath = path.join(toDir, entry.name);
+
+      if (entry.isDirectory()) {
+        fs.mkdirSync(toPath, { recursive: true });
+        moveDeclarationFiles(fromPath, toPath);
+        continue;
+      }
+
+      if (entry.name.endsWith('.d.ts') || entry.name.endsWith('.d.mts')) {
+        fs.mkdirSync(path.dirname(toPath), { recursive: true });
+        fs.copyFileSync(fromPath, toPath);
+      }
+    }
+  };
+
+  moveDeclarationFiles(tscEmitDir, distDir);
+
+  const fixUpwardReferences = (dirPath) => {
+    for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+      const fullPath = path.join(dirPath, entry.name);
+
+      if (entry.isDirectory()) {
+        if (fullPath === tscEmitDir) continue;
+        fixUpwardReferences(fullPath);
+        continue;
+      }
+
+      if (!entry.name.endsWith('.d.ts') && !entry.name.endsWith('.d.mts')) {
+        continue;
+      }
+
+      const source = fs.readFileSync(fullPath, 'utf8');
+      const rewritten = source.replace(
+        /(from\s+['"]|import\s*\(\s*['"])(\.\.\/[^'"]+)(['"])/g,
+        (_, prefix, specifier, suffix) => {
+          let normalized = path.posix.normalize(specifier.replace(/^\.\.\//, './'));
+          if (!normalized.startsWith('.')) normalized = `./${normalized}`;
+          return `${prefix}${normalized}${suffix}`;
+        }
+      );
+
+      if (rewritten !== source) {
+        fs.writeFileSync(fullPath, rewritten);
+      }
+    }
+  };
+
+  fixUpwardReferences(distDir);
+
+  try {
+    fs.rmSync(tscEmitDir, { recursive: true, force: true });
+  } catch {
+    // Windows AV may briefly lock the dir; cleanup failure is non-fatal.
+  }
+}
+
 const rootPkg = JSON.parse(fs.readFileSync(rootPkgPath, 'utf8'));
 
 const distPkg = {
@@ -18,6 +83,11 @@ const distPkg = {
   version: rootPkg.version,
   description: rootPkg.description,
   license: rootPkg.license ?? 'MIT',
+  repository: rootPkg.repository,
+  homepage: rootPkg.homepage,
+  bugs: rootPkg.bugs,
+  keywords: rootPkg.keywords,
+  author: rootPkg.author,
   type: 'module',
   main: './index.js',
   module: './index.js',
@@ -34,14 +104,25 @@ const distPkg = {
   },
   sideEffects: ['**/*.css'],
   peerDependencies: rootPkg.peerDependencies ?? {},
+  peerDependenciesMeta: rootPkg.peerDependenciesMeta,
   dependencies: rootPkg.dependencies ?? {},
+  publishConfig: rootPkg.publishConfig,
 };
+
+for (const key of Object.keys(distPkg)) {
+  if (distPkg[key] === undefined) delete distPkg[key];
+}
 
 fs.writeFileSync(distPkgPath, JSON.stringify(distPkg, null, 2));
 
 const readmePath = path.join(rootDir, 'README.md');
 if (fs.existsSync(readmePath)) {
   fs.copyFileSync(readmePath, path.join(distDir, 'README.md'));
+}
+
+const licensePath = path.join(rootDir, 'LICENSE');
+if (fs.existsSync(licensePath)) {
+  fs.copyFileSync(licensePath, path.join(distDir, 'LICENSE'));
 }
 
 const rewriteAliasImports = (dirPath) => {
@@ -78,6 +159,11 @@ const rewriteAliasImports = (dirPath) => {
 
 rewriteAliasImports(distDir);
 
+// Emit a scoped variant of styles.css for consumers that need to isolate
+// editor styles from their host app (e.g. when global Tailwind CSS variables
+// would collide). Selectors are prefixed with `.op-plate-scope`; consumers
+// wrap the editor in `<div className="op-plate-scope">` and import
+// `@oneplatformdev/plate/styles.scoped.css` instead of `./styles.css`.
 const stylePath = path.join(distDir, 'styles.css');
 const scopedStylePath = path.join(distDir, 'styles.scoped.css');
 const scopeClass = '.op-plate-scope';
@@ -88,11 +174,7 @@ if (fs.existsSync(stylePath)) {
 
   root.walkRules((rule) => {
     const parent = rule.parent;
-    if (
-      parent &&
-      parent.type === 'atrule' &&
-      /keyframes$/i.test(parent.name)
-    ) {
+    if (parent && parent.type === 'atrule' && /keyframes$/i.test(parent.name)) {
       return;
     }
 
@@ -107,72 +189,4 @@ if (fs.existsSync(stylePath)) {
   });
 
   fs.writeFileSync(scopedStylePath, root.toString());
-}
-
-const distTypesSrcDir = path.join(distDir, 'src');
-if (fs.existsSync(distTypesSrcDir)) {
-  const moveTypes = (fromDir, toDir) => {
-    for (const entry of fs.readdirSync(fromDir, { withFileTypes: true })) {
-      const fromPath = path.join(fromDir, entry.name);
-      const toPath = path.join(toDir, entry.name);
-
-      if (entry.isDirectory()) {
-        fs.mkdirSync(toPath, { recursive: true });
-        moveTypes(fromPath, toPath);
-        continue;
-      }
-
-      if (entry.name.endsWith('.d.ts') || entry.name.endsWith('.d.mts')) {
-        fs.mkdirSync(path.dirname(toPath), { recursive: true });
-        fs.copyFileSync(fromPath, toPath);
-      }
-    }
-  };
-
-  moveTypes(distTypesSrcDir, distDir);
-
-  const rewriteMovedTypeImports = (dirPath) => {
-    for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
-      const fullPath = path.join(dirPath, entry.name);
-
-      if (entry.isDirectory()) {
-        if (fullPath === distTypesSrcDir) continue;
-
-        rewriteMovedTypeImports(fullPath);
-        continue;
-      }
-
-      if (!entry.name.endsWith('.d.ts') && !entry.name.endsWith('.d.mts')) {
-        continue;
-      }
-
-      const source = fs.readFileSync(fullPath, 'utf8');
-      const rewritten = source.replace(
-        /(from\s+['"]|import\s*\(\s*['"])(\.\.\/[^'"]+)(['"])/g,
-        (_, prefix, specifier, suffix) => {
-          let normalized = path.posix.normalize(
-            specifier.replace(/^\.\.\//, './')
-          );
-
-          if (!normalized.startsWith('.')) {
-            normalized = `./${normalized}`;
-          }
-
-          return `${prefix}${normalized}${suffix}`;
-        }
-      );
-
-      if (rewritten !== source) {
-        fs.writeFileSync(fullPath, rewritten);
-      }
-    }
-  };
-
-  rewriteMovedTypeImports(distDir);
-
-  try {
-    fs.rmSync(distTypesSrcDir, { recursive: true, force: true });
-  } catch {
-    // On Windows the folder can be temporarily locked by indexers/AV; ignore cleanup failure.
-  }
 }
