@@ -120,7 +120,7 @@ export default defineConfig(({ command }) => {
     include: ['is-hotkey'],
   },
   resolve: {
-    dedupe: ['react', 'react-dom'],
+    dedupe: ['react', 'react-dom', 'platejs'],
     alias: [
       {
         find: '@oneplatformdev/plate/styles.css',

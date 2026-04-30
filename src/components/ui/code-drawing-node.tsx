@@ -27,7 +27,7 @@ import {
   useReadOnly,
   useSelected,
 } from 'platejs/react';
-import debounce from 'lodash/debounce.js';
+import debounce from 'lodash.debounce';
 import { Trash2, DownloadIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';

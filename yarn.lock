@@ -1566,6 +1566,7 @@ __metadata:
     "@radix-ui/react-toolbar": "npm:^1.1.11"
     "@radix-ui/react-tooltip": "npm:^1.2.8"
     "@tailwindcss/vite": "npm:^4.2.4"
+    "@types/lodash.debounce": "npm:^4.0.9"
     "@types/node": "npm:^24.12.2"
     "@types/react": "npm:^19.2.14"
     "@types/react-dom": "npm:^19.2.3"
@@ -1580,9 +1581,9 @@ __metadata:
     eslint-plugin-react-hooks: "npm:^7.1.1"
     eslint-plugin-react-refresh: "npm:^0.5.2"
     globals: "npm:^17.5.0"
-    lodash: "npm:^4.18.1"
+    lodash.debounce: "npm:^4.0.8"
     lowlight: "npm:^3.3.0"
-    lucide-react: "npm:^1.11.0"
+    lucide-react: "npm:^1.14.0"
     platejs: "npm:^53.0.0"
     radix-ui: "npm:^1.4.3"
     react: "npm:^19.2.5"
@@ -1609,17 +1610,16 @@ __metadata:
     use-file-picker: "npm:2.1.2"
     vite: "npm:^8.0.10"
     vite-plugin-dts: "npm:^4.5.4"
-    zod: "npm:^4.3.6"
+    zod: "npm:^4.4.1"
   peerDependencies:
-    "@oneplatformdev/ui": ">=0.0.1 <1"
-    "@oneplatformdev/utils": ">=0.0.2 <1"
+    class-variance-authority: ^0.7.0
+    clsx: ^2.0.0
+    lucide-react: ">=0.544.0 <2"
     react: ">=18 <20"
+    react-day-picker: ^9.0.0
     react-dom: ">=18 <20"
-  peerDependenciesMeta:
-    "@oneplatformdev/ui":
-      optional: true
-    "@oneplatformdev/utils":
-      optional: true
+    tailwind-merge: ^3.0.0
+    zod: ">=3.0.0 <5"
   languageName: unknown
   linkType: soft
 
@@ -4920,6 +4920,22 @@ __metadata:
   version: 0.16.8
   resolution: "@types/katex@npm:0.16.8"
   checksum: 0661609353f4f5e62bd2dc78da99e842761c6474b19f2268b195bbe9dbf20e6f766a31155d79eec2e7c3eff4e7eba4b30f4f519e9c6a11c75bb45e257a2ddb69
+  languageName: node
+  linkType: hard
+
+"@types/lodash.debounce@npm:^4.0.9":
+  version: 4.0.9
+  resolution: "@types/lodash.debounce@npm:4.0.9"
+  dependencies:
+    "@types/lodash": "npm:*"
+  checksum: 9fbb24e5e52616faf60ba5c82d8c6517f4b86fc6e9ab353b4c56c0760f63d9bf53af3f2d8f6c37efa48090359fb96dba1087d497758511f6c40677002191d042
+  languageName: node
+  linkType: hard
+
+"@types/lodash@npm:*":
+  version: 4.17.24
+  resolution: "@types/lodash@npm:4.17.24"
+  checksum: b72f60d4daacdad1fa643edb3faba204c02a01eb1ac00a83ff73496a6d236fc55e459c06106e8ced42277dba932d087d8fc090f8de4ef590d3f91e6d6f7ce85a
   languageName: node
   linkType: hard
 
@@ -9067,7 +9083,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash.debounce@npm:4.0.8":
+"lodash.debounce@npm:4.0.8, lodash.debounce@npm:^4.0.8":
   version: 4.0.8
   resolution: "lodash.debounce@npm:4.0.8"
   checksum: 762998a63e095412b6099b8290903e0a8ddcb353ac6e2e0f2d7e7d03abd4275fe3c689d88960eb90b0dde4f177554d51a690f22a343932ecbc50a5d111849987
@@ -9088,7 +9104,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:^4.17.21, lodash@npm:^4.17.23, lodash@npm:^4.18.1":
+"lodash@npm:^4.17.21, lodash@npm:^4.17.23":
   version: 4.18.1
   resolution: "lodash@npm:4.18.1"
   checksum: 757228fc68805c59789e82185135cf85f05d0b2d3d54631d680ca79ec21944ec8314d4533639a14b8bcfbd97a517e78960933041a5af17ecb693ec6eecb99a27
@@ -9143,7 +9159,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lucide-react@npm:^1.11.0":
+"lucide-react@npm:^1.14.0":
   version: 1.14.0
   resolution: "lucide-react@npm:1.14.0"
   peerDependencies:
@@ -13541,7 +13557,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.25 || ^4.0, zod@npm:^3.25.0 || ^4.0.0, zod@npm:^4.3.6":
+"zod@npm:^3.25 || ^4.0, zod@npm:^3.25.0 || ^4.0.0, zod@npm:^4.4.1":
   version: 4.4.1
   resolution: "zod@npm:4.4.1"
   checksum: 55714c4bea81f7851ac46bf9edfde7c63ed6677a6cc8971ed3a526a079de3ffbe2bd56160327d22e070f72854fc4485b98ab7373255b6b69d64d9067caec864e
