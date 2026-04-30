@@ -98,8 +98,7 @@ Items deferred from the release-prep pass. Tackle them when the relevant pain sh
 ### Release infrastructure (do before second publish)
 
 - **`provenance: true` in `publishConfig`.** Currently `false` to avoid OIDC complexity on the first manual publish. Once a GitHub Actions release workflow exists, flip this on — npm signs the tarball with sigstore and the package gets a verified-publisher badge. Requires `id-token: write` permission in the workflow and a publish step that uses `npm publish --provenance`.
-- **First publish playbook.** First `npm publish` for a scoped package needs `--access public` (already set via `publishConfig.access`), `npm login` with 2FA on the publishing account, and a `git tag v0.1.0 && git push --tags`. Document the exact sequence in `RELEASING.md` once it's been done once and the gotchas are known. Subsequent publishes can be automated through Actions.
-- **Bumping `oneplatform-client-admin`.** Consumer is currently on `^0.0.55`. After the first `0.1.0` publish, open a PR there bumping to `^0.1.0`. Expect to handle three migrations: rename `MyValue` → `EditorValue`, drop the `MyEditor` import (use `useEditor()` return type), and verify the `feat/3012` `styles.scoped.css` import still resolves.
+- **First publish playbook.** Documented in `RELEASING.md`. Subsequent publishes go through `yarn release` / `yarn release:patch|minor|major`; can be automated through GitHub Actions later.
 
 ### Architecture follow-ups
 
