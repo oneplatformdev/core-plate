@@ -52,6 +52,9 @@ const forwardedArgs = process.argv.slice(2);
 const child = spawn('npm', ['publish', ...forwardedArgs], {
   stdio: 'inherit',
   env: { ...process.env, NPM_CONFIG_USERCONFIG: tmpRc },
+  // On Windows `npm` is `npm.cmd`; spawn cannot resolve `.cmd` without a shell.
+  shell: process.platform === 'win32',
+  windowsHide: true,
 });
 
 child.on('exit', (code, signal) => {
