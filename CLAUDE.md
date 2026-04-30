@@ -23,10 +23,12 @@ There is no test runner configured.
 
 ### Release workflow
 
-- `yarn release` — publishes to npm using `NPM_TOKEN` from `.env`. Forwards extra args to `npm publish`, so `yarn release --dry-run` validates without uploading and `yarn release --tag next` ships under a non-`latest` tag for soak-testing. Mechanics: `scripts/release.mjs` writes a temp `.npmrc` (mode 600) in `os.tmpdir()`, sets `NPM_CONFIG_USERCONFIG` to point at it, spawns `npm publish`, then deletes the temp file on exit (including SIGINT/SIGTERM). The token never lands in the repo or in shell history.
-- `.env` is gitignored; `.env.example` is the only checked-in template. Generate the token at `https://www.npmjs.com/settings/<user>/tokens` — prefer an "Automation" token so it bypasses the 2FA OTP step.
-- The `release` script chains `yarn build:ts && node --env-file=.env scripts/release.mjs` so a stale `dist/` cannot be shipped through this entry point. Direct `npm publish` no longer auto-builds — always go through `yarn release` (or run `yarn build:ts` manually first).
-- After a successful publish: `git tag -a vX.Y.Z -m '...'` + `git push origin vX.Y.Z` + `gh release create vX.Y.Z --notes-file CHANGELOG.md --latest` for git/GitHub parity.
+- **Standard release**: `yarn release:patch` (or `:minor` / `:major`). Each one-liner runs `npm version <bump> -m 'chore(release): v%s'` (which edits `package.json`, creates a git commit, and tags `vX.Y.Z`), then `yarn release` (full build + publish via `scripts/release.mjs` using `NPM_TOKEN` from `.env`), then `git push --follow-tags` to land both the version commit and the tag on the remote. Bump up CHANGELOG.md before invoking — `npm version` does not edit it.
+- **Lower-level**: `yarn release` (no bump, just build + publish) and `yarn version:patch|minor|major` (just bump + tag, no publish). Useful when you need to recover from a half-finished release or republish with `--tag next` after a manual bump.
+- **Mechanics of `scripts/release.mjs`**: writes a temp `.npmrc` (mode 600) in `os.tmpdir()`, sets `NPM_CONFIG_USERCONFIG` to point at it, spawns `npm publish` with whatever extra args were passed (so `yarn release --dry-run` and `yarn release --tag next` both work), then deletes the temp file on exit (including SIGINT/SIGTERM). The token never lands in the repo or in shell history.
+- **Secret handling**: `.env` is gitignored; `.env.example` is the only checked-in template. Generate the token at `https://www.npmjs.com/settings/<user>/tokens` — prefer an "Automation" token so it bypasses the 2FA OTP step.
+- **Stale-build safety**: the `release` script chains `yarn build:ts && node --env-file=.env scripts/release.mjs` so a stale `dist/` cannot be shipped through this entry point. Direct `npm publish` no longer auto-builds — always go through `yarn release` (or run `yarn build:ts` manually first).
+- **GitHub release** is still a manual step after pushing: `gh release create vX.Y.Z --notes-file CHANGELOG.md --latest`. Worth automating later (a `release:gh` script that reads the current version), but keeping it explicit means the human author confirms the changelog is up to date.
 
 ## Architecture
 

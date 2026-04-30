@@ -56,7 +56,13 @@
     "dev:link": "node scripts/watch-local-package.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "release": "yarn build:ts && node --env-file=.env scripts/release.mjs"
+    "release": "yarn build:ts && node --env-file=.env scripts/release.mjs",
+    "version:patch": "npm version patch -m \"chore(release): v%s\"",
+    "version:minor": "npm version minor -m \"chore(release): v%s\"",
+    "version:major": "npm version major -m \"chore(release): v%s\"",
+    "release:patch": "yarn version:patch && yarn release && git push --follow-tags",
+    "release:minor": "yarn version:minor && yarn release && git push --follow-tags",
+    "release:major": "yarn version:major && yarn release && git push --follow-tags"
   },
   "peerDependencies": {
     "class-variance-authority": "^0.7.0",
