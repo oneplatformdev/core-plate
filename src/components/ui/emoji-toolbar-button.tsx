@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ToolbarButton } from '@/components/ui/toolbar';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 export function EmojiToolbarButton({
   options,
@@ -47,6 +48,7 @@ export function EmojiToolbarButton({
 }: {
   options?: EmojiDropdownMenuOptions;
 } & React.ComponentPropsWithoutRef<typeof ToolbarButton>) {
+  const inOverflowMenu = useToolbarOverflowMenu();
   const { emojiPickerState, isOpen, setIsOpen } =
     useEmojiDropdownMenuState(options);
 
@@ -59,6 +61,8 @@ export function EmojiToolbarButton({
       }
       isOpen={isOpen}
       setIsOpen={setIsOpen}
+      side={inOverflowMenu ? 'left' : 'bottom'}
+      align={inOverflowMenu ? 'end' : 'center'}
     >
       <EmojiPicker
         {...emojiPickerState}
@@ -75,18 +79,24 @@ export function EmojiPopover({
   control,
   isOpen,
   setIsOpen,
+  align = 'center',
+  side = 'bottom',
 }: {
   children: React.ReactNode;
   control: React.ReactNode;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  align?: React.ComponentProps<typeof Popover.Content>['align'];
+  side?: React.ComponentProps<typeof Popover.Content>['side'];
 }) {
   return (
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
       <Popover.Trigger asChild>{control}</Popover.Trigger>
 
       <Popover.Portal>
-        <Popover.Content className="z-100">{children}</Popover.Content>
+        <Popover.Content align={align} className="z-100" side={side} sideOffset={8}>
+          {children}
+        </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
   );

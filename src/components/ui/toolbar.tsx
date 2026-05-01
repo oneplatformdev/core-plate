@@ -15,6 +15,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 export function Toolbar({
   className,
@@ -305,6 +306,7 @@ function withTooltip<T extends React.ElementType>(Component: T) {
     ...props
   }: TooltipProps<T>) {
     const [mounted, setMounted] = React.useState(false);
+    const inOverflowMenu = useToolbarOverflowMenu();
 
     React.useEffect(() => {
       setMounted(true);
@@ -313,13 +315,20 @@ function withTooltip<T extends React.ElementType>(Component: T) {
     const component = <Component {...(props as React.ComponentProps<T>)} />;
 
     if (tooltip && mounted) {
+      const mergedTooltipContentProps = {
+        ...(inOverflowMenu && !tooltipContentProps?.side
+          ? { side: 'left' as const }
+          : {}),
+        ...tooltipContentProps,
+      };
+
       return (
         <Tooltip {...tooltipProps}>
           <TooltipTrigger asChild {...tooltipTriggerProps}>
             {component}
           </TooltipTrigger>
 
-          <TooltipContent {...tooltipContentProps}>{tooltip}</TooltipContent>
+          <TooltipContent {...mergedTooltipContentProps}>{tooltip}</TooltipContent>
         </Tooltip>
       );
     }
