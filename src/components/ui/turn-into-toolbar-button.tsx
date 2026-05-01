@@ -37,6 +37,7 @@ import { usePlateI18n } from '@/i18n/provider';
 import { getBlockType, setBlockType } from '@/components/transforms';
 
 import { ToolbarButton, ToolbarMenuGroup } from './toolbar';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 function getTurnIntoItems(t: (key: any) => string) {
   return [
@@ -67,6 +68,7 @@ export function TurnIntoToolbarButton(props: DropdownMenuProps) {
     getProp: (node) => getBlockType(node as TElement),
   });
   const items = React.useMemo(() => getTurnIntoItems(t), [t]);
+  const inOverflowMenu = useToolbarOverflowMenu();
   const selectedItem = React.useMemo(
     () => items.find((item) => item.value === (value ?? KEYS.p)) ?? items[0],
     [items, value]
@@ -86,7 +88,8 @@ export function TurnIntoToolbarButton(props: DropdownMenuProps) {
           e.preventDefault();
           editor.tf.focus();
         }}
-        align="start"
+        align={inOverflowMenu ? 'end' : 'start'}
+        side={inOverflowMenu ? 'left' : 'bottom'}
       >
         <ToolbarMenuGroup
           value={value}
