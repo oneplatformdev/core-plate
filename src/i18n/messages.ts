@@ -136,7 +136,7 @@ export type PlateMessages = Partial<Record<PlateMessageKey, string>>;
 
 export const ukPlateMessages: Record<PlateMessageKey, string> = {
   ...defaultPlateMessages,
-  more: '\u0411\u0456\u043b\u044c\u0448\u0435',
+  more: 'Більше',
   align: 'Вирівнювання',
   turnInto: 'Перетворити на',
   delete: 'Видалити',
