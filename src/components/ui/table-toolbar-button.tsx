@@ -69,7 +69,6 @@ export function TableToolbarButton(props: DropdownMenuProps) {
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent
               className="m-0 p-0"
-              side={inOverflowMenu ? 'left' : 'right'}
             >
               <TablePicker />
             </DropdownMenuSubContent>
@@ -83,7 +82,7 @@ export function TableToolbarButton(props: DropdownMenuProps) {
               <div className="size-4" />
               <span>{t('cell')}</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent side={inOverflowMenu ? 'left' : 'right'}>
+            <DropdownMenuSubContent>
               <DropdownMenuItem
                 className="min-w-[180px]"
                 disabled={!mergeState.canMerge}
@@ -117,7 +116,7 @@ export function TableToolbarButton(props: DropdownMenuProps) {
               <div className="size-4" />
               <span>{t('row')}</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent side={inOverflowMenu ? 'left' : 'right'}>
+            <DropdownMenuSubContent>
               <DropdownMenuItem
                 className="min-w-[180px]"
                 disabled={!tableSelected}
@@ -162,7 +161,7 @@ export function TableToolbarButton(props: DropdownMenuProps) {
               <div className="size-4" />
               <span>{t('column')}</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent side={inOverflowMenu ? 'left' : 'right'}>
+            <DropdownMenuSubContent>
               <DropdownMenuItem
                 className="min-w-[180px]"
                 disabled={!tableSelected}
