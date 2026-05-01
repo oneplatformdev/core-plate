@@ -42,6 +42,7 @@ import {
   ToolbarSplitButtonSecondary,
 } from './toolbar';
 import { usePlateI18n } from '@/i18n/provider';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 const MEDIA_CONFIG: Record<
   string,
@@ -87,6 +88,7 @@ export function MediaToolbarButton({
 
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
+  const inOverflowMenu = useToolbarOverflowMenu();
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
   const { openFilePicker } = useFilePicker({
@@ -127,8 +129,9 @@ export function MediaToolbarButton({
 
           <DropdownMenuContent
             onClick={(e) => e.stopPropagation()}
-            align="start"
-            alignOffset={-32}
+            align={inOverflowMenu ? 'end' : 'start'}
+            alignOffset={inOverflowMenu ? 0 : -32}
+            side={inOverflowMenu ? 'left' : 'bottom'}
           >
             <DropdownMenuGroup>
               <DropdownMenuItem onSelect={() => openFilePicker()}>

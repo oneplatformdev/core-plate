@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 
 import { ToolbarButton } from './toolbar';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 const DEFAULT_FONT_SIZE = '16';
 
@@ -47,6 +48,7 @@ const FONT_SIZES = [
 export function FontSizeToolbarButton() {
   const [inputValue, setInputValue] = React.useState(DEFAULT_FONT_SIZE);
   const [isFocused, setIsFocused] = React.useState(false);
+  const inOverflowMenu = useToolbarOverflowMenu();
   const { editor, tf } = useEditorPlugin(FontSizePlugin);
 
   const cursorFontSize = useEditorSelector((editor) => {
@@ -126,6 +128,8 @@ export function FontSizeToolbarButton() {
         <PopoverContent
           className="w-10 px-px py-1"
           onOpenAutoFocus={(e) => e.preventDefault()}
+          align={inOverflowMenu ? 'end' : 'center'}
+          side={inOverflowMenu ? 'left' : 'bottom'}
         >
           {FONT_SIZES.map((size) => (
             <button

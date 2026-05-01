@@ -34,6 +34,7 @@ import { usePlateI18n } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 
 import { ToolbarButton } from './toolbar';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 export function TableToolbarButton(props: DropdownMenuProps) {
   const { t } = usePlateI18n();
@@ -44,6 +45,7 @@ export function TableToolbarButton(props: DropdownMenuProps) {
 
   const { editor, tf } = useEditorPlugin(TablePlugin);
   const [open, setOpen] = React.useState(false);
+  const inOverflowMenu = useToolbarOverflowMenu();
   const mergeState = useTableMergeState();
 
   return (
@@ -56,7 +58,8 @@ export function TableToolbarButton(props: DropdownMenuProps) {
 
       <DropdownMenuContent
         className="flex w-[180px] min-w-0 flex-col"
-        align="start"
+        align={inOverflowMenu ? 'end' : 'start'}
+        side={inOverflowMenu ? 'left' : 'bottom'}
       >
         <DropdownMenuGroup>
           <DropdownMenuSub>
@@ -64,7 +67,10 @@ export function TableToolbarButton(props: DropdownMenuProps) {
               <Grid3x3Icon className="size-4" />
               <span>{t('table')}</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="m-0 p-0">
+            <DropdownMenuSubContent
+              className="m-0 p-0"
+              side={inOverflowMenu ? 'left' : 'right'}
+            >
               <TablePicker />
             </DropdownMenuSubContent>
           </DropdownMenuSub>
@@ -77,7 +83,7 @@ export function TableToolbarButton(props: DropdownMenuProps) {
               <div className="size-4" />
               <span>{t('cell')}</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
+            <DropdownMenuSubContent side={inOverflowMenu ? 'left' : 'right'}>
               <DropdownMenuItem
                 className="min-w-[180px]"
                 disabled={!mergeState.canMerge}
@@ -111,7 +117,7 @@ export function TableToolbarButton(props: DropdownMenuProps) {
               <div className="size-4" />
               <span>{t('row')}</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
+            <DropdownMenuSubContent side={inOverflowMenu ? 'left' : 'right'}>
               <DropdownMenuItem
                 className="min-w-[180px]"
                 disabled={!tableSelected}
@@ -156,7 +162,7 @@ export function TableToolbarButton(props: DropdownMenuProps) {
               <div className="size-4" />
               <span>{t('column')}</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
+            <DropdownMenuSubContent side={inOverflowMenu ? 'left' : 'right'}>
               <DropdownMenuItem
                 className="min-w-[180px]"
                 disabled={!tableSelected}
