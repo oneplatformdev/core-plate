@@ -42,6 +42,7 @@ import { usePlateI18n } from '@/i18n/provider';
 import { insertBlock, insertInlineElement } from '@/components/transforms';
 
 import { ToolbarButton, ToolbarMenuGroup } from './toolbar';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 type Group = {
   group: string;
@@ -113,6 +114,7 @@ export function InsertToolbarButton(props: DropdownMenuProps) {
   const { t } = usePlateI18n();
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
+  const inOverflowMenu = useToolbarOverflowMenu();
   const groups = React.useMemo(() => getGroups(t), [t]);
 
   return (
@@ -125,7 +127,8 @@ export function InsertToolbarButton(props: DropdownMenuProps) {
 
       <DropdownMenuContent
         className="flex max-h-[500px] min-w-[240px] flex-col overflow-y-auto"
-        align="start"
+        align={inOverflowMenu ? 'end' : 'start'}
+        side={inOverflowMenu ? 'left' : 'bottom'}
         style={{ minWidth: 260, width: 260 }}
       >
         {groups.map(({ group, items }) => (

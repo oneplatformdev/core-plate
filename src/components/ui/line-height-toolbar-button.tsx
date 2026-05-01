@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import { ToolbarButton } from './toolbar';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 export function LineHeightToolbarButton(props: DropdownMenuProps) {
   const { t } = usePlateI18n();
@@ -32,6 +33,7 @@ export function LineHeightToolbarButton(props: DropdownMenuProps) {
   });
 
   const [open, setOpen] = React.useState(false);
+  const inOverflowMenu = useToolbarOverflowMenu();
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
@@ -41,7 +43,11 @@ export function LineHeightToolbarButton(props: DropdownMenuProps) {
         </ToolbarButton>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="min-w-0" align="start">
+      <DropdownMenuContent
+        className="min-w-0"
+        align={inOverflowMenu ? 'end' : 'start'}
+        side={inOverflowMenu ? 'left' : 'bottom'}
+      >
         <DropdownMenuRadioGroup
           value={value}
           onValueChange={(newValue) => {

@@ -26,6 +26,7 @@ const defaultValue = normalizeStaticValue([
 ]);
 
 export type PlateEditorProps = {
+  contentRef?: React.Ref<HTMLDivElement>;
   children?: React.ReactNode;
   className?: string;
   containerClassName?: string;
@@ -45,6 +46,7 @@ export type PlateEditorProps = {
 } & Pick<EditorProps, 'autoFocus' | 'placeholder' | 'readOnly'>;
 
 export function PlateEditor({
+  contentRef,
   autoFocus,
   children,
   className,
@@ -156,6 +158,7 @@ export function PlateEditor({
                     className={editorClassName ?? className}
                     placeholder={effectivePlaceholder}
                     readOnly={readOnly}
+                    ref={contentRef}
                     variant={editorVariant}
                   />
                 </EditorContainer>

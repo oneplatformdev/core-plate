@@ -25,11 +25,13 @@ import {
   ToolbarSplitButtonPrimary,
   ToolbarSplitButtonSecondary,
 } from './toolbar';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 export function BulletedListToolbarButton() {
   const { t } = usePlateI18n();
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
+  const inOverflowMenu = useToolbarOverflowMenu();
 
   const pressed = useEditorSelector(
     (editor) =>
@@ -60,7 +62,11 @@ export function BulletedListToolbarButton() {
           <ToolbarSplitButtonSecondary />
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="start" alignOffset={-32}>
+        <DropdownMenuContent
+          align={inOverflowMenu ? 'end' : 'start'}
+          alignOffset={inOverflowMenu ? 0 : -32}
+          side={inOverflowMenu ? 'left' : 'bottom'}
+        >
           <DropdownMenuGroup>
             <DropdownMenuItem
               onClick={() =>
@@ -109,6 +115,7 @@ export function NumberedListToolbarButton() {
   const { t } = usePlateI18n();
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
+  const inOverflowMenu = useToolbarOverflowMenu();
 
   const pressed = useEditorSelector(
     (editor) =>
@@ -141,7 +148,11 @@ export function NumberedListToolbarButton() {
           <ToolbarSplitButtonSecondary />
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="start" alignOffset={-32}>
+        <DropdownMenuContent
+          align={inOverflowMenu ? 'end' : 'start'}
+          alignOffset={inOverflowMenu ? 0 : -32}
+          side={inOverflowMenu ? 'left' : 'bottom'}
+        >
           <DropdownMenuGroup>
             <DropdownMenuItem
               onSelect={() =>

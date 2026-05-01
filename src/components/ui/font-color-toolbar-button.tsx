@@ -33,6 +33,7 @@ import { usePlateI18n } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 
 import { ToolbarButton, ToolbarMenuGroup } from './toolbar';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 const MAX_CUSTOM_COLORS = 19;
 const HEX_COLOR_RE = /^#[\da-f]{6}$/i;
@@ -96,6 +97,7 @@ export function FontColorToolbarButton({
   const [updatedColor, setUpdatedColor] = React.useState<string>();
   const [open, setOpen] = React.useState(false);
   const [colorsQueue, setColorsQueue] = React.useState<string[]>([]);
+  const inOverflowMenu = useToolbarOverflowMenu();
 
   const recordColorUsage = React.useCallback((color: string) => {
     const normalized = normalizeColor(color);
@@ -195,7 +197,10 @@ export function FontColorToolbarButton({
         </ToolbarButton>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent
+        align={inOverflowMenu ? 'end' : 'start'}
+        side={inOverflowMenu ? 'left' : 'bottom'}
+      >
         <ColorPicker
           clearColor={clearColor}
           color={selectedColor || color}

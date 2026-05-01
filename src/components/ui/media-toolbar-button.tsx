@@ -42,39 +42,41 @@ import {
   ToolbarSplitButtonSecondary,
 } from './toolbar';
 import { usePlateI18n } from '@/i18n/provider';
+import type { PlateMessageKey } from '@/i18n/messages';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 const MEDIA_CONFIG: Record<
   string,
   {
     accept: string[];
     icon: React.ReactNode;
-    title: string;
-    tooltip: string;
+    titleKey: PlateMessageKey;
+    tooltipKey: PlateMessageKey;
   }
 > = {
   [KEYS.audio]: {
     accept: ['audio/*'],
     icon: <AudioLinesIcon className="size-4" />,
-    title: 'Insert Audio',
-    tooltip: 'Audio',
+    titleKey: 'insertAudio',
+    tooltipKey: 'audio',
   },
   [KEYS.file]: {
     accept: ['*'],
     icon: <FileUpIcon className="size-4" />,
-    title: 'Insert File',
-    tooltip: 'File',
+    titleKey: 'insertFile',
+    tooltipKey: 'file',
   },
   [KEYS.img]: {
     accept: ['image/*'],
     icon: <ImageIcon className="size-4" />,
-    title: 'Insert Image',
-    tooltip: 'Image',
+    titleKey: 'insertImage',
+    tooltipKey: 'image',
   },
   [KEYS.video]: {
     accept: ['video/*'],
     icon: <FilmIcon className="size-4" />,
-    title: 'Insert Video',
-    tooltip: 'Video',
+    titleKey: 'insertVideo',
+    tooltipKey: 'video',
   },
 };
 
@@ -87,6 +89,7 @@ export function MediaToolbarButton({
 
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
+  const inOverflowMenu = useToolbarOverflowMenu();
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
   const { openFilePicker } = useFilePicker({
@@ -100,6 +103,7 @@ export function MediaToolbarButton({
   return (
     <>
       <ToolbarSplitButton
+        tooltip={t(currentConfig.tooltipKey)}
         onClick={() => {
           openFilePicker();
         }}
@@ -127,8 +131,9 @@ export function MediaToolbarButton({
 
           <DropdownMenuContent
             onClick={(e) => e.stopPropagation()}
-            align="start"
-            alignOffset={-32}
+            align={inOverflowMenu ? 'end' : 'start'}
+            alignOffset={inOverflowMenu ? 0 : -32}
+            side={inOverflowMenu ? 'left' : 'bottom'}
           >
             <DropdownMenuGroup>
               <DropdownMenuItem onSelect={() => openFilePicker()}>
@@ -190,7 +195,7 @@ function MediaUrlDialogContent({
   return (
     <>
       <AlertDialogHeader>
-        <AlertDialogTitle>{currentConfig.title}</AlertDialogTitle>
+        <AlertDialogTitle>{t(currentConfig.titleKey)}</AlertDialogTitle>
       </AlertDialogHeader>
 
       <AlertDialogDescription className="group relative w-full">

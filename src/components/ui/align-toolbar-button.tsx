@@ -24,6 +24,7 @@ import {
 import { usePlateI18n } from '@/i18n/provider';
 
 import { ToolbarButton } from './toolbar';
+import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 const items = [
   {
@@ -54,6 +55,7 @@ export function AlignToolbarButton(props: DropdownMenuProps) {
     }) ?? 'left';
 
   const [open, setOpen] = React.useState(false);
+  const inOverflowMenu = useToolbarOverflowMenu();
   const IconValue =
     items.find((item) => item.value === value)?.icon ?? AlignLeftIcon;
 
@@ -65,7 +67,11 @@ export function AlignToolbarButton(props: DropdownMenuProps) {
         </ToolbarButton>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="min-w-0" align="start">
+      <DropdownMenuContent
+        className="min-w-0"
+        align={inOverflowMenu ? 'end' : 'start'}
+        side={inOverflowMenu ? 'left' : 'bottom'}
+      >
         <DropdownMenuRadioGroup
           value={value}
           onValueChange={(value) => {

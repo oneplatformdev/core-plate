@@ -108,6 +108,7 @@ export const defaultPlateMessages = {
   insert: 'Insert',
   undo: 'Undo',
   redo: 'Redo',
+  more: 'More',
   boldShortcut: 'Bold (⌘+B)',
   italicShortcut: 'Italic (⌘+I)',
   underlineShortcut: 'Underline (⌘+U)',
@@ -135,6 +136,7 @@ export type PlateMessages = Partial<Record<PlateMessageKey, string>>;
 
 export const ukPlateMessages: Record<PlateMessageKey, string> = {
   ...defaultPlateMessages,
+  more: 'Більше',
   align: 'Вирівнювання',
   turnInto: 'Перетворити на',
   delete: 'Видалити',
@@ -263,3 +265,4 @@ export const ukPlateMessages: Record<PlateMessageKey, string> = {
   upperRomanList: 'Верхній римський (I, II, III)',
   typeSomethingPlaceholder: 'Введіть текст...',
 };
+
