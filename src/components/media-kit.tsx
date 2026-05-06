@@ -48,7 +48,17 @@ export const MediaKit = [
   AudioPlugin.withComponent(AudioElement),
   FilePlugin.withComponent(FileElement),
   PlaceholderPlugin.configure({
-    options: { disableEmptyPlaceholder: true },
+    options: {
+      disableEmptyPlaceholder: true,
+      uploadConfig: {
+        [KEYS.video]: {
+          maxFileCount: 1,
+          maxFileSize: '128MB',
+          mediaType: KEYS.video,
+          minFileCount: 1,
+        },
+      },
+    },
     render: { afterEditable: MediaUploadToast, node: PlaceholderElement },
   }),
   CaptionPlugin.configure({
