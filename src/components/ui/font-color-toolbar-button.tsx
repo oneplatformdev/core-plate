@@ -46,6 +46,94 @@ function isValidHexColor(color: string): boolean {
   return HEX_COLOR_RE.test(color);
 }
 
+const COLOR_NAME_UK: Record<string, string> = {
+  black: 'Чорний',
+  blue: 'Синій',
+  'cornflower blue': 'Волошково-синій',
+  cyan: 'Бірюзовий',
+  'dark blue 1': 'Темно-синій 1',
+  'dark blue 2': 'Темно-синій 2',
+  'dark blue 3': 'Темно-синій 3',
+  'dark cornflower blue 1': 'Темно-волошково-синій 1',
+  'dark cornflower blue 2': 'Темно-волошково-синій 2',
+  'dark cornflower blue 3': 'Темно-волошково-синій 3',
+  'dark cyan 1': 'Темно-бірюзовий 1',
+  'dark cyan 2': 'Темно-бірюзовий 2',
+  'dark cyan 3': 'Темно-бірюзовий 3',
+  'dark green 1': 'Темно-зелений 1',
+  'dark green 2': 'Темно-зелений 2',
+  'dark green 3': 'Темно-зелений 3',
+  'dark grey 1': 'Темно-сірий 1',
+  'dark grey 2': 'Темно-сірий 2',
+  'dark grey 3': 'Темно-сірий 3',
+  'dark grey 4': 'Темно-сірий 4',
+  'dark magenta 1': 'Темно-пурпурний 1',
+  'dark magenta 2': 'Темно-пурпурний 2',
+  'dark magenta 3': 'Темно-пурпурний 3',
+  'dark orange 1': 'Темно-помаранчевий 1',
+  'dark orange 2': 'Темно-помаранчевий 2',
+  'dark orange 3': 'Темно-помаранчевий 3',
+  'dark purple 1': 'Темно-фіолетовий 1',
+  'dark purple 2': 'Темно-фіолетовий 2',
+  'dark purple 3': 'Темно-фіолетовий 3',
+  'dark red 1': 'Темно-червоний 1',
+  'dark red 2': 'Темно-червоний 2',
+  'dark red 3': 'Темно-червоний 3',
+  'dark red berry 1': 'Темно-ягідний 1',
+  'dark red berry 2': 'Темно-ягідний 2',
+  'dark red berry 3': 'Темно-ягідний 3',
+  'dark yellow 1': 'Темно-жовтий 1',
+  'dark yellow 2': 'Темно-жовтий 2',
+  'dark yellow 3': 'Темно-жовтий 3',
+  green: 'Зелений',
+  grey: 'Сірий',
+  'light blue 1': 'Світло-синій 1',
+  'light blue 2': 'Світло-синій 2',
+  'light blue 3': 'Світло-синій 3',
+  'light cornflower blue 1': 'Світло-волошково-синій 1',
+  'light cornflower blue 2': 'Світло-волошково-синій 2',
+  'light cornflower blue 3': 'Світло-волошково-синій 3',
+  'light cyan 1': 'Світло-бірюзовий 1',
+  'light cyan 2': 'Світло-бірюзовий 2',
+  'light cyan 3': 'Світло-бірюзовий 3',
+  'light green 1': 'Світло-зелений 1',
+  'light green 2': 'Світло-зелений 2',
+  'light green 3': 'Світло-зелений 3',
+  'light grey 1': 'Світло-сірий 1',
+  'light grey 2': 'Світло-сірий 2',
+  'light grey 3': 'Світло-сірий 3',
+  'light magenta 1': 'Світло-пурпурний 1',
+  'light magenta 2': 'Світло-пурпурний 2',
+  'light magenta 3': 'Світло-пурпурний 3',
+  'light orange 1': 'Світло-помаранчевий 1',
+  'light orange 2': 'Світло-помаранчевий 2',
+  'light orange 3': 'Світло-помаранчевий 3',
+  'light purple 1': 'Світло-фіолетовий 1',
+  'light purple 2': 'Світло-фіолетовий 2',
+  'light purple 3': 'Світло-фіолетовий 3',
+  'light red 1': 'Світло-червоний 1',
+  'light red 2': 'Світло-червоний 2',
+  'light red 3': 'Світло-червоний 3',
+  'light red berry 1': 'Світло-ягідний 1',
+  'light red berry 2': 'Світло-ягідний 2',
+  'light red berry 3': 'Світло-ягідний 3',
+  'light yellow 1': 'Світло-жовтий 1',
+  'light yellow 2': 'Світло-жовтий 2',
+  'light yellow 3': 'Світло-жовтий 3',
+  magenta: 'Пурпурний',
+  orange: 'Помаранчевий',
+  purple: 'Фіолетовий',
+  red: 'Червоний',
+  'red berry': 'Ягідний',
+  white: 'Білий',
+  yellow: 'Жовтий',
+};
+
+function translateColorName(name: string, locale: 'en' | 'uk'): string {
+  if (locale !== 'uk') return name;
+  return COLOR_NAME_UK[name] ?? name;
+}
+
 function computeIsBrightColor(hex: string): boolean {
   if (!isValidHexColor(hex)) return false;
 
@@ -522,6 +610,8 @@ export function ColorDropdownMenuItems({
   updateColor: (color: string) => void;
   color?: string;
 } & React.ComponentProps<'div'>) {
+  const { locale } = usePlateI18n();
+
   return (
     <div
       className={cn(
@@ -533,7 +623,7 @@ export function ColorDropdownMenuItems({
       <TooltipProvider>
         {colors.map(({ isBrightColor, name, value }) => (
           <ColorDropdownMenuItem
-            name={name}
+            name={name ? translateColorName(name, locale) : name}
             key={name ?? value}
             value={value}
             isBrightColor={isBrightColor}
