@@ -198,6 +198,7 @@ export function FontColorToolbarButton({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
+        className="w-[340px] max-w-[90vw]"
         align={inOverflowMenu ? 'end' : 'start'}
         side={inOverflowMenu ? 'left' : 'bottom'}
       >

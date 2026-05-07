@@ -21,11 +21,14 @@ import { ToolbarButton } from './toolbar';
 import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 const DEFAULT_FONT_SIZE = '16';
+const MIN_FONT_SIZE = 1;
+const MAX_FONT_SIZE = 48;
 
 const FONT_SIZE_MAP = {
-  h1: '36',
-  h2: '24',
-  h3: '20',
+  h1: '48',
+  h2: '36',
+  h3: '24',
+  h4: '16',
 } as const;
 
 const FONT_SIZES = [
@@ -40,9 +43,6 @@ const FONT_SIZES = [
   '30',
   '36',
   '48',
-  '60',
-  '72',
-  '96',
 ] as const;
 
 export function FontSizeToolbarButton() {
@@ -70,10 +70,9 @@ export function FontSizeToolbarButton() {
   const handleInputChange = () => {
     const newSize = toUnitLess(inputValue);
 
-    if (
-      Number.parseInt(newSize, 10) < 1 ||
-      Number.parseInt(newSize, 10) > 100
-    ) {
+    const nextSize = Number.parseInt(newSize, 10);
+
+    if (nextSize < MIN_FONT_SIZE || nextSize > MAX_FONT_SIZE) {
       editor.tf.focus();
 
       return;
@@ -86,7 +85,10 @@ export function FontSizeToolbarButton() {
   };
 
   const handleFontSizeChange = (delta: number) => {
-    const newSize = Number(displayValue) + delta;
+    const newSize = Math.min(
+      MAX_FONT_SIZE,
+      Math.max(MIN_FONT_SIZE, Number(displayValue) + delta)
+    );
     tf.fontSize.addMark(`${newSize}px`);
     editor.tf.focus();
   };
