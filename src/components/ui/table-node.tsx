@@ -1125,7 +1125,7 @@ function ColorDropdownMenu({
         <ToolbarButton tooltip={tooltip}>{children}</ToolbarButton>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="start" className="w-[340px] max-w-[90vw]">
         <ToolbarMenuGroup label={t('colors')}>
           <ColorDropdownMenuItems
             className="px-2"
@@ -1334,7 +1334,7 @@ export function TableCellElement({
       }}
     >
       <div
-        className="relative z-20 box-border h-full px-3 py-2"
+        className="relative z-20 box-border h-full px-3 py-2 whitespace-normal break-normal [overflow-wrap:normal] [word-break:normal] [&_*]:[word-break:normal]"
         style={
           rowSpan === 1
             ? { minHeight: 'var(--tableRowMinHeight, 0px)' }
