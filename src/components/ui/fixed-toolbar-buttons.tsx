@@ -247,8 +247,8 @@ export function FixedToolbarButtons() {
                 className="ignore-click-outside/toolbar max-h-[60vh] max-w-[90vw] min-w-1! w-full overflow-y-auto overflow-x-hidden p-1.5"
                 align="end"
                 collisionPadding={8}
-                side="bottom"
-                sideOffset={8}
+                side="left"
+                sideOffset={6}
               >
                 <ToolbarOverflowContext.Provider value>
                   {renderOverflowItems(hiddenItems)}

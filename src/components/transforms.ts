@@ -143,10 +143,15 @@ export const insertBlock = (
     if (type in insertBlockMap) {
       insertBlockMap[type](editor, type);
     } else {
+      const insertPath = PathApi.next(path);
       editor.tf.insertNodes(editor.api.create.block({ type }), {
-        at: PathApi.next(path),
-        select: true,
+        at: insertPath,
       });
+      const start = editor.api.start(insertPath);
+
+      if (start) {
+        editor.tf.select(start);
+      }
     }
 
     if (!isSameBlockType) {

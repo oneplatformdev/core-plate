@@ -69,8 +69,10 @@ export function AlignToolbarButton(props: DropdownMenuProps) {
 
       <DropdownMenuContent
         className="min-w-0"
-        align={inOverflowMenu ? 'end' : 'start'}
+        align={inOverflowMenu ? 'end' : 'end'}
         side={inOverflowMenu ? 'left' : 'bottom'}
+        collisionPadding={8}
+        sideOffset={6}
       >
         <DropdownMenuRadioGroup
           value={value}

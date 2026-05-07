@@ -20,10 +20,10 @@ export function HrElement(props: PlateElementProps) {
 
   return (
     <PlateElement {...props}>
-      <div className="py-6" contentEditable={false}>
+      <div className="max-w-full overflow-hidden py-6" contentEditable={false}>
         <hr
           className={cn(
-            'h-0.5 rounded-sm border-none bg-muted bg-clip-content',
+            'm-0 h-px w-full max-w-full rounded-none border-none bg-border',
             selected && focused && 'ring-2 ring-ring ring-offset-2',
             !readOnly && 'cursor-pointer'
           )}
