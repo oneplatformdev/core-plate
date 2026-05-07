@@ -44,7 +44,7 @@ export function BulletedListToolbarButton() {
   );
 
   return (
-    <ToolbarSplitButton pressed={open}>
+    <ToolbarSplitButton pressed={open} tooltip={t('bulletedList')}>
       <ToolbarSplitButtonPrimary
         className="data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
         onClick={() => {
@@ -130,7 +130,7 @@ export function NumberedListToolbarButton() {
   );
 
   return (
-    <ToolbarSplitButton pressed={open}>
+    <ToolbarSplitButton pressed={open} tooltip={t('numberedList')}>
       <ToolbarSplitButtonPrimary
         className="data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
         onClick={() =>
