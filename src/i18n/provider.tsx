@@ -6,10 +6,12 @@ import { defaultPlateMessages, type PlateMessageKey, type PlateMessages, ukPlate
 
 type PlateI18nContextValue = {
   t: (key: PlateMessageKey) => string;
+  locale: 'en' | 'uk';
 };
 
 const PlateI18nContext = React.createContext<PlateI18nContextValue>({
   t: (key) => defaultPlateMessages[key],
+  locale: 'uk',
 });
 
 export function PlateI18nProvider({
@@ -31,8 +33,9 @@ export function PlateI18nProvider({
   const value = React.useMemo<PlateI18nContextValue>(
     () => ({
       t: (key) => merged[key],
+      locale,
     }),
-    [merged]
+    [locale, merged]
   );
 
   return (

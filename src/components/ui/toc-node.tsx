@@ -9,6 +9,7 @@ import { cva } from 'class-variance-authority';
 import { PlateElement } from 'platejs/react';
 
 import { Button } from '@/components/ui/button';
+import { usePlateI18n } from '@/i18n/provider';
 
 const headingItemVariants = cva(
   'block h-auto w-full cursor-pointer truncate rounded-none px-0.5 py-1.5 text-left font-medium underline decoration-[0.5px] underline-offset-4',
@@ -28,6 +29,7 @@ const headingItemVariants = cva(
 );
 
 export function TocElement(props: PlateElementProps) {
+  const { t } = usePlateI18n();
   const state = useTocElementState();
   const { props: btnProps } = useTocElement(state);
   const { activeContentId, headingList } = state;
@@ -54,7 +56,7 @@ export function TocElement(props: PlateElementProps) {
           ))
         ) : (
           <div className="text-gray-500 text-sm">
-            Create a heading to display the table of contents.
+            {t('createHeadingToDisplayToc')}
           </div>
         )}
       </div>

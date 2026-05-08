@@ -83,14 +83,25 @@ function CodeBlockCombobox() {
   const value = element.lang || 'plaintext';
   const [searchValue, setSearchValue] = React.useState('');
 
+  const getLanguageLabel = React.useCallback(
+    (language: { label: string; value: string }) => {
+      if (language.value === 'auto') return t('auto');
+      if (language.value === 'plaintext') return t('plaintext');
+      return language.label;
+    },
+    [t]
+  );
+
   const items = React.useMemo(
     () =>
       languages.filter(
         (language) =>
           !searchValue ||
-          language.label.toLowerCase().includes(searchValue.toLowerCase())
+          getLanguageLabel(language)
+            .toLowerCase()
+            .includes(searchValue.toLowerCase())
       ),
-    [searchValue]
+    [getLanguageLabel, searchValue]
   );
 
   if (readOnly) return null;
@@ -105,8 +116,12 @@ function CodeBlockCombobox() {
           aria-expanded={open}
           role="combobox"
         >
-          {languages.find((language) => language.value === value)?.label ??
-            t('plainText')}
+          {getLanguageLabel(
+            languages.find((language) => language.value === value) ?? {
+              label: t('plaintext'),
+              value: 'plaintext',
+            }
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -126,7 +141,7 @@ function CodeBlockCombobox() {
             <CommandGroup>
               {items.map((language) => (
                 <CommandItem
-                  key={language.label}
+                  key={language.value}
                   className="cursor-pointer"
                   value={language.value}
                   onSelect={(value) => {
@@ -143,7 +158,7 @@ function CodeBlockCombobox() {
                       value === language.value ? 'opacity-100' : 'opacity-0'
                     )}
                   />
-                  {language.label}
+                  {getLanguageLabel(language)}
                 </CommandItem>
               ))}
             </CommandGroup>

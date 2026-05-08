@@ -9,18 +9,14 @@ import { DropdownMenuItemIndicator } from '@radix-ui/react-dropdown-menu';
 import {
   CheckIcon,
   ChevronRightIcon,
-  Code2,
   Columns3Icon,
   FileCodeIcon,
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
   Heading4Icon,
-  Heading5Icon,
-  Heading6Icon,
   ListIcon,
   ListOrderedIcon,
-  PilcrowIcon,
   QuoteIcon,
   SquareIcon,
 } from 'lucide-react';
@@ -41,19 +37,16 @@ import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 function getTurnIntoItems(t: (key: any) => string) {
   return [
-    { icon: <PilcrowIcon />, label: t('text'), value: KEYS.p },
+    { icon: null, label: t('text'), value: KEYS.p },
     { icon: <Heading1Icon />, label: t('heading1'), value: 'h1' },
     { icon: <Heading2Icon />, label: t('heading2'), value: 'h2' },
     { icon: <Heading3Icon />, label: t('heading3'), value: 'h3' },
     { icon: <Heading4Icon />, label: t('heading4'), value: 'h4' },
-    { icon: <Heading5Icon />, label: t('heading5'), value: 'h5' },
-    { icon: <Heading6Icon />, label: t('heading6'), value: 'h6' },
     { icon: <ListIcon />, label: t('bulletedList'), value: KEYS.ul },
     { icon: <ListOrderedIcon />, label: t('numberedList'), value: KEYS.ol },
     { icon: <SquareIcon />, label: t('todoList'), value: KEYS.listTodo },
     { icon: <ChevronRightIcon />, label: t('toggleList'), value: KEYS.toggle },
     { icon: <FileCodeIcon />, label: t('code'), value: KEYS.codeBlock },
-    { icon: <Code2 />, label: t('codeDrawing'), value: KEYS.codeDrawing },
     { icon: <QuoteIcon />, label: t('quote'), value: KEYS.blockquote },
     { icon: <Columns3Icon />, label: t('threeColumns'), value: 'action_three_columns' },
   ];
@@ -107,7 +100,7 @@ export function TurnIntoToolbarButton(props: DropdownMenuProps) {
                   <CheckIcon />
                 </DropdownMenuItemIndicator>
               </span>
-              {icon}
+              {icon && icon}
               {label}
             </DropdownMenuRadioItem>
           ))}

@@ -4,9 +4,9 @@ import * as React from 'react';
 
 import {
   formatDateValue,
-  getDateDisplayLabel,
   parseCanonicalDateValue,
 } from '@platejs/date';
+import { enUS, uk } from 'date-fns/locale';
 import type { TDateElement } from 'platejs';
 import type { PlateElementProps } from 'platejs/react';
 
@@ -19,10 +19,11 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { usePlateI18n } from '@/i18n/provider';
+import { formatDateLabel } from '@/lib/format-date-label';
 import { cn } from '@/lib/utils';
 
 export function DateElement(props: PlateElementProps<TDateElement>) {
-  const { t } = usePlateI18n();
+  const { locale, t } = usePlateI18n();
   const { editor, element } = props;
 
   const readOnly = useReadOnly();
@@ -36,7 +37,15 @@ export function DateElement(props: PlateElementProps<TDateElement>) {
       draggable
     >
       {element.date || element.rawDate ? (
-        getDateDisplayLabel(element)
+        formatDateLabel(
+          element,
+          locale,
+          {
+            today: t('today'),
+            tomorrow: t('tomorrow'),
+            yesterday: t('yesterday'),
+          }
+        )
       ) : (
         <span>{t('pickDate')}</span>
       )}
@@ -69,6 +78,7 @@ export function DateElement(props: PlateElementProps<TDateElement>) {
                 { at: element }
               );
             }}
+            locale={locale === 'uk' ? uk : enUS}
             mode="single"
             initialFocus
           />

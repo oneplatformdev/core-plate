@@ -141,11 +141,6 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
                 >
                   {t('blockquote')}
                 </ContextMenuItem>
-                <ContextMenuItem
-                  onClick={() => handleTurnInto(KEYS.codeDrawing)}
-                >
-                  {t('codeDrawing')}
-                </ContextMenuItem>
               </ContextMenuSubContent>
             </ContextMenuSub>
           </ContextMenuGroup>

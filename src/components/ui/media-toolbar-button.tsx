@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import * as React from 'react';
 
@@ -190,7 +190,7 @@ function MediaUrlDialogContent({
       type: nodeType,
       url,
     });
-  }, [url, editor, nodeType, setOpen]);
+  }, [url, t, setOpen, editor.tf, nodeType]);
 
   return (
     <>

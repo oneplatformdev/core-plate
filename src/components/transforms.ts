@@ -4,13 +4,11 @@ import type { PlateEditor } from 'platejs/react';
 
 import { insertCallout } from '@platejs/callout';
 import { insertCodeBlock, toggleCodeBlock } from '@platejs/code-block';
-import { insertCodeDrawing } from '@platejs/code-drawing';
 import { insertDate } from '@platejs/date';
-import { insertExcalidraw } from '@platejs/excalidraw';
 import { insertFootnote } from '@platejs/footnote';
 import { insertColumnGroup, toggleColumnGroup } from '@platejs/layout';
 import { triggerFloatingLink } from '@platejs/link/react';
-import { insertEquation, insertInlineEquation } from '@platejs/math';
+import { insertEquation } from '@platejs/math';
 import {
   insertAudioPlaceholder,
   insertFilePlaceholder,
@@ -19,6 +17,7 @@ import {
 } from '@platejs/media';
 import { SuggestionPlugin } from '@platejs/suggestion/react';
 import { TablePlugin } from '@platejs/table/react';
+import { TogglePlugin } from '@platejs/toggle/react';
 import { insertToc } from '@platejs/toc';
 import {
   type NodeEntry,
@@ -66,10 +65,7 @@ const insertBlockMap: Record<
   [KEYS.audio]: (editor) => insertAudioPlaceholder(editor, { select: true }),
   [KEYS.callout]: (editor) => insertCallout(editor, { select: true }),
   [KEYS.codeBlock]: (editor) => insertCodeBlock(editor, { select: true }),
-  [KEYS.codeDrawing]: (editor) =>
-    insertCodeDrawing(editor, {}, { select: true }),
   [KEYS.equation]: (editor) => insertEquation(editor, { select: true }),
-  [KEYS.excalidraw]: (editor) => insertExcalidraw(editor, {}, { select: true }),
   [KEYS.file]: (editor) => insertFilePlaceholder(editor, { select: true }),
   [KEYS.img]: (editor) =>
     insertMedia(editor, {
@@ -83,6 +79,26 @@ const insertBlockMap: Record<
     }),
   [KEYS.table]: (editor) =>
     editor.getTransforms(TablePlugin).insert.table({}, { select: true }),
+  [KEYS.toggle]: (editor) => {
+    const block = editor.api.block();
+
+    if (!block) return;
+
+    const insertPath = PathApi.next(block[1]);
+    const toggleNode = editor.api.create.block({ type: KEYS.toggle });
+
+    editor.tf.insertNodes(toggleNode, { at: insertPath });
+
+    if (toggleNode.id) {
+      editor.getApi(TogglePlugin).toggle.toggleIds([toggleNode.id as string], true);
+    }
+
+    const start = editor.api.start(insertPath);
+
+    if (start) {
+      editor.tf.select(start);
+    }
+  },
   [KEYS.toc]: (editor) => insertToc(editor, { select: true }),
   [KEYS.video]: (editor) => insertVideoPlaceholder(editor, { select: true }),
 };
@@ -93,8 +109,6 @@ const insertInlineMap: Record<
 > = {
   [KEYS.date]: (editor) => insertDate(editor, { select: true }),
   [ACTION_FOOTNOTE]: (editor) => insertFootnote(editor, { select: true }),
-  [KEYS.inlineEquation]: (editor) =>
-    insertInlineEquation(editor, '', { select: true }),
   [KEYS.link]: (editor) => triggerFloatingLink(editor, { focused: true }),
 };
 
@@ -145,10 +159,15 @@ export const insertBlock = (
     if (type in insertBlockMap) {
       insertBlockMap[type](editor, type);
     } else {
+      const insertPath = PathApi.next(path);
       editor.tf.insertNodes(editor.api.create.block({ type }), {
-        at: PathApi.next(path),
-        select: true,
+        at: insertPath,
       });
+      const start = editor.api.start(insertPath);
+
+      if (start) {
+        editor.tf.select(start);
+      }
     }
 
     if (!isSameBlockType) {
@@ -198,6 +217,8 @@ export const setBlockType = (
   { at }: { at?: Path } = {}
 ) => {
   editor.tf.withoutNormalizing(() => {
+    const toggleIdsToOpen = new Set<string>();
+
     if (type === KEYS.blockquote) {
       const target = at ?? editor.selection;
 
@@ -220,10 +241,20 @@ export const setBlockType = (
         editor.tf.unsetNodes([KEYS.listType, 'indent'], { at: path });
       }
       if (type in setBlockMap) {
-        return setBlockMap[type](editor, type, entry);
+        setBlockMap[type](editor, type, entry);
+
+        if (type === KEYS.toggle && node.id) {
+          toggleIdsToOpen.add(node.id as string);
+        }
+
+        return;
       }
       if (node.type !== type) {
         editor.tf.setNodes({ type }, { at: path });
+      }
+
+      if (type === KEYS.toggle && node.id) {
+        toggleIdsToOpen.add(node.id as string);
       }
     };
 
@@ -242,6 +273,14 @@ export const setBlockType = (
     entries.forEach((entry) => {
       setEntry(entry);
     });
+
+    if (type === KEYS.toggle && toggleIdsToOpen.size > 0) {
+      editor
+        .getApi(TogglePlugin)
+        .toggle.toggleIds(Array.from(toggleIdsToOpen), true);
+      editor.tf.collapse();
+      editor.tf.focus();
+    }
   });
 };
 

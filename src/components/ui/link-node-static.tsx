@@ -11,7 +11,7 @@ export function LinkElementStatic(props: SlateElementProps<TLinkElement>) {
     <SlateElement
       {...props}
       as="a"
-      className="font-medium text-primary underline decoration-primary underline-offset-4"
+      className="font-medium text-[#2563EB] underline decoration-[#2563EB] underline-offset-4 hover:text-[#1D4ED8] hover:decoration-[#1D4ED8]"
       attributes={{
         ...props.attributes,
         ...getLinkAttributes(props.editor, props.element),

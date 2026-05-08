@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ToolbarButton } from '@/components/ui/toolbar';
+import { usePlateI18n } from '@/i18n/provider';
 import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 export function EmojiToolbarButton({
@@ -48,6 +49,7 @@ export function EmojiToolbarButton({
 }: {
   options?: EmojiDropdownMenuOptions;
 } & React.ComponentPropsWithoutRef<typeof ToolbarButton>) {
+  const { locale, t } = usePlateI18n();
   const inOverflowMenu = useToolbarOverflowMenu();
   const { emojiPickerState, isOpen, setIsOpen } =
     useEmojiDropdownMenuState(options);
@@ -55,7 +57,7 @@ export function EmojiToolbarButton({
   return (
     <EmojiPopover
       control={
-        <ToolbarButton pressed={isOpen} tooltip="Emoji" isDropdown {...props}>
+        <ToolbarButton pressed={isOpen} tooltip={t('emoji')} isDropdown {...props}>
           <SmileIcon />
         </ToolbarButton>
       }
@@ -67,6 +69,7 @@ export function EmojiToolbarButton({
       <EmojiPicker
         {...emojiPickerState}
         isOpen={isOpen}
+        locale={locale}
         setIsOpen={setIsOpen}
         settings={options?.settings}
       />
@@ -114,9 +117,9 @@ export function EmojiPicker({
     search: emojiSearchIcons,
   },
   isSearching,
+  locale,
   refs,
   searchResult,
-  searchValue,
   setSearch,
   settings = EmojiSettings,
   visibleCategories,
@@ -124,8 +127,50 @@ export function EmojiPicker({
   onMouseOver,
   onSelectEmoji,
 }: Omit<UseEmojiPickerType, 'icons'> & {
+  locale: 'en' | 'uk';
   icons?: EmojiIconList<React.ReactElement>;
 }) {
+  const [searchInput, setSearchInput] = React.useState('');
+  const localizedI18n = React.useMemo(() => {
+    if (locale !== 'uk') return i18n;
+
+    return {
+      ...i18n,
+      clear: 'Очистити',
+      pick: 'Оберіть емодзі',
+      search: 'Пошук емодзі...',
+      searchNoResultsSubtitle: 'Спробуйте інший запит',
+      searchNoResultsTitle: 'Нічого не знайдено',
+      searchResult: 'Результати пошуку',
+      categories: {
+        ...i18n.categories,
+        activity: 'Активність',
+        custom: 'Користувацькі',
+        flags: 'Прапори',
+        foods: 'Їжа та напої',
+        frequent: 'Часті',
+        nature: 'Природа',
+        objects: 'Обʼєкти',
+        people: 'Люди',
+        places: 'Подорожі',
+        symbols: 'Символи',
+      },
+    };
+  }, [i18n, locale]);
+
+  const handleSearch = React.useCallback(
+    (value: string) => {
+      setSearchInput(value);
+      setSearch(value);
+    },
+    [setSearch]
+  );
+
+  const handleClearSearch = React.useCallback(() => {
+    setSearchInput('');
+    clearSearch();
+  }, [clearSearch]);
+
   return (
     <div
       className={cn(
@@ -137,25 +182,25 @@ export function EmojiPicker({
         onClick={handleCategoryClick}
         emojiLibrary={emojiLibrary}
         focusedCategory={focusedCategory}
-        i18n={i18n}
+        i18n={localizedI18n}
         icons={icons}
       />
       <EmojiPickerSearchBar
-        i18n={i18n}
-        searchValue={searchValue}
-        setSearch={setSearch}
+        i18n={localizedI18n}
+        searchValue={searchInput}
+        setSearch={handleSearch}
       >
         <EmojiPickerSearchAndClear
-          clearSearch={clearSearch}
-          i18n={i18n}
-          searchValue={searchValue}
+          clearSearch={handleClearSearch}
+          i18n={localizedI18n}
+          searchValue={searchInput}
         />
       </EmojiPickerSearchBar>
       <EmojiPickerContent
         onMouseOver={onMouseOver}
         onSelectEmoji={onSelectEmoji}
         emojiLibrary={emojiLibrary}
-        i18n={i18n}
+        i18n={localizedI18n}
         isSearching={isSearching}
         refs={refs}
         searchResult={searchResult}
@@ -165,7 +210,7 @@ export function EmojiPicker({
       <EmojiPickerPreview
         emoji={emoji}
         hasFound={hasFound}
-        i18n={i18n}
+        i18n={localizedI18n}
         isSearching={isSearching}
       />
     </div>
@@ -384,7 +429,7 @@ function EmojiPickerSearchBar({
           value={searchValue}
           onChange={(event) => setSearch(event.target.value)}
           placeholder={i18n.search}
-          aria-label="Search"
+          aria-label={i18n.search}
           autoComplete="off"
           type="text"
           autoFocus
@@ -418,7 +463,7 @@ function EmojiPickerSearchAndClear({
           )}
           onClick={clearSearch}
           title={i18n.clear}
-          aria-label="Clear"
+          aria-label={i18n.clear}
           type="button"
         >
           {emojiSearchIcons.delete}

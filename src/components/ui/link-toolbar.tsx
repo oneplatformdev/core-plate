@@ -29,6 +29,7 @@ import {
 } from 'platejs/react';
 
 import { buttonVariants } from '@/components/ui/button';
+import { usePlateI18n } from '@/i18n/provider';
 import { Separator } from '@/components/ui/separator';
 
 const popoverVariants = cva(
@@ -44,6 +45,7 @@ export function LinkFloatingToolbar({
 }: {
   state?: LinkFloatingToolbarState;
 }) {
+  const { t } = usePlateI18n();
   const activeCommentId = usePluginOption({ key: KEYS.comment }, 'activeId');
   const activeSuggestionId = usePluginOption(
     { key: KEYS.suggestion },
@@ -107,7 +109,7 @@ export function LinkFloatingToolbar({
 
         <FloatingLinkUrlInput
           className={inputVariants()}
-          placeholder="Paste link"
+          placeholder={t('pasteLink')}
           data-plate-focus
         />
       </div>
@@ -118,7 +120,7 @@ export function LinkFloatingToolbar({
         </div>
         <input
           className={inputVariants()}
-          placeholder="Text to display"
+          placeholder={t('textToDisplay')}
           data-plate-focus
           {...textInputProps}
         />

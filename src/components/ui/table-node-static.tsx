@@ -23,8 +23,8 @@ export function TableElementStatic({
     >
       <div className="group/table relative w-fit">
         <table
-          className="mr-0 ml-px table h-px table-fixed border-collapse"
-          style={{ borderCollapse: 'collapse', width: '100%' }}
+          className="mr-0 ml-px table h-px min-w-full border-collapse"
+          style={{ borderCollapse: 'collapse', width: 'max-content' }}
         >
           <tbody className="min-w-full">{children}</tbody>
         </table>
@@ -85,7 +85,7 @@ export function TableCellElementStatic({
       }}
     >
       <div
-        className="relative z-20 box-border h-full px-4 py-2"
+        className="relative z-20 box-border h-full px-4 py-2 whitespace-normal break-normal [overflow-wrap:normal] [word-break:normal] [&_*]:[word-break:normal]"
         style={{ minHeight }}
       >
         {props.children}
