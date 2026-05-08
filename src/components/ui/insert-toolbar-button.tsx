@@ -121,7 +121,7 @@ export function InsertToolbarButton(props: DropdownMenuProps) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="flex max-h-[500px] min-w-[240px] flex-col overflow-y-auto"
+        className="flex max-h-[60vh] min-w-[240px] flex-col overflow-y-auto"
         align={inOverflowMenu ? 'end' : 'start'}
         side={inOverflowMenu ? 'left' : 'bottom'}
         style={{ minWidth: 260, width: 260 }}

@@ -128,7 +128,7 @@ export function FontSizeToolbarButton() {
           />
         </PopoverTrigger>
         <PopoverContent
-          className="w-10 px-px py-1"
+          className="max-h-[50vh] w-10 overflow-y-auto px-px py-1"
           onOpenAutoFocus={(e) => e.preventDefault()}
           align={inOverflowMenu ? 'end' : 'center'}
           side={inOverflowMenu ? 'left' : 'bottom'}
