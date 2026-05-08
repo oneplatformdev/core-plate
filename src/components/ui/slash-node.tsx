@@ -19,7 +19,6 @@ import {
   Quote,
   RadicalIcon,
   Square,
-  SuperscriptIcon,
   Table,
   TableOfContentsIcon,
 } from 'lucide-react';
@@ -158,19 +157,6 @@ const groups: Group[] = [
         label: 'Equation',
         value: KEYS.equation,
       },
-      {
-        icon: <Code2 />,
-        keywords: [
-          'code-drawing',
-          'diagram',
-          'plantuml',
-          'graphviz',
-          'flowchart',
-          'mermaid',
-        ],
-        label: 'Code Drawing',
-        value: KEYS.codeDrawing,
-      },
     ].map((item) => ({
       ...item,
       onSelect: (editor, value) => {
@@ -189,24 +175,19 @@ const groups: Group[] = [
         value: KEYS.date,
       },
       {
-        focusEditor: true,
-        icon: <SuperscriptIcon />,
-        keywords: ['citation', 'fn', 'footnote', '[^]'],
-        label: 'Footnote',
-        value: 'action_footnote',
-      },
-      {
         focusEditor: false,
         icon: <RadicalIcon />,
         label: 'Inline Equation',
         value: KEYS.inlineEquation,
       },
-    ].map((item) => ({
+    ]
+      .filter((item) => item.value !== KEYS.inlineEquation)
+      .map((item) => ({
       ...item,
       onSelect: (editor, value) => {
         insertInlineElement(editor, value);
       },
-    })),
+      })),
   },
 ];
 

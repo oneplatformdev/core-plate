@@ -7,7 +7,6 @@ import type { DropdownMenuProps } from '@radix-ui/react-dropdown-menu';
 import {
   CalendarIcon,
   ChevronRightIcon,
-  Code2,
   Columns3Icon,
   FileCodeIcon,
   FilmIcon,
@@ -25,7 +24,6 @@ import {
   QuoteIcon,
   RadicalIcon,
   SquareIcon,
-  SuperscriptIcon,
   TableIcon,
   TableOfContentsIcon,
 } from 'lucide-react';
@@ -95,7 +93,6 @@ function getGroups(t: (key: any) => string): Group[] {
         { icon: <TableOfContentsIcon />, label: t('tableOfContents'), value: KEYS.toc },
         { icon: <Columns3Icon />, label: t('threeColumns'), value: 'action_three_columns' },
         { focusEditor: false, icon: <RadicalIcon />, label: t('equation'), value: KEYS.equation },
-        { icon: <Code2 />, label: t('codeDrawing'), value: KEYS.codeDrawing },
       ].map((item) => ({ ...item, onSelect: (editor, value) => insertBlock(editor, value) })),
     },
     {
@@ -103,8 +100,6 @@ function getGroups(t: (key: any) => string): Group[] {
       items: [
         { icon: <Link2Icon />, label: t('link'), value: KEYS.link },
         { focusEditor: true, icon: <CalendarIcon />, label: t('date'), value: KEYS.date },
-        { focusEditor: true, icon: <SuperscriptIcon />, label: t('footnote'), value: 'action_footnote' },
-        { focusEditor: false, icon: <RadicalIcon />, label: t('inlineEquation'), value: KEYS.inlineEquation },
       ].map((item) => ({ ...item, onSelect: (editor, value) => insertInlineElement(editor, value) })),
     },
   ];

@@ -16,11 +16,11 @@ export function ToggleElement(props: PlateElementProps) {
   const { buttonProps, open } = useToggleButton(state);
 
   return (
-    <PlateElement {...props} className="pl-6">
+    <PlateElement {...props} className="relative pl-7">
       <Button
         size="icon"
         variant="ghost"
-        className="-left-0.5 absolute top-0 size-6 cursor-pointer select-none items-center justify-center rounded-md p-px text-muted-foreground transition-colors hover:bg-accent [&_svg]:size-4"
+        className="absolute top-0 left-0 size-6 cursor-pointer select-none items-center justify-center rounded-md p-px text-muted-foreground transition-colors hover:bg-accent [&_svg]:size-4"
         contentEditable={false}
         {...buttonProps}
       >
@@ -32,7 +32,7 @@ export function ToggleElement(props: PlateElementProps) {
           }
         />
       </Button>
-      {props.children}
+      <div className="min-h-6 pt-0.5">{props.children}</div>
     </PlateElement>
   );
 }

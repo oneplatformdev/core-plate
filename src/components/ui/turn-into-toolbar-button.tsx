@@ -9,7 +9,6 @@ import { DropdownMenuItemIndicator } from '@radix-ui/react-dropdown-menu';
 import {
   CheckIcon,
   ChevronRightIcon,
-  Code2,
   Columns3Icon,
   FileCodeIcon,
   Heading1Icon,
@@ -49,7 +48,6 @@ function getTurnIntoItems(t: (key: any) => string) {
     { icon: <SquareIcon />, label: t('todoList'), value: KEYS.listTodo },
     { icon: <ChevronRightIcon />, label: t('toggleList'), value: KEYS.toggle },
     { icon: <FileCodeIcon />, label: t('code'), value: KEYS.codeBlock },
-    { icon: <Code2 />, label: t('codeDrawing'), value: KEYS.codeDrawing },
     { icon: <QuoteIcon />, label: t('quote'), value: KEYS.blockquote },
     { icon: <Columns3Icon />, label: t('threeColumns'), value: 'action_three_columns' },
   ];

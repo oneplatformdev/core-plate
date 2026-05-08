@@ -14,7 +14,6 @@ import { useEditorReadOnly } from 'platejs/react';
 
 import { usePlateI18n } from '@/i18n/provider';
 
-import { InlineEquationToolbarButton } from './equation-toolbar-button';
 import { LinkToolbarButton } from './link-toolbar-button';
 import { MarkToolbarButton } from './mark-toolbar-button';
 import { MoreToolbarButton } from './more-toolbar-button';
@@ -58,8 +57,6 @@ export function FloatingToolbarButtons() {
             <MarkToolbarButton nodeType={KEYS.code} tooltip={t('codeShortcut')}>
               <Code2Icon />
             </MarkToolbarButton>
-
-            <InlineEquationToolbarButton />
 
             <LinkToolbarButton />
           </ToolbarGroup>
