@@ -86,7 +86,7 @@ function CodeBlockCombobox() {
   const getLanguageLabel = React.useCallback(
     (language: { label: string; value: string }) => {
       if (language.value === 'auto') return t('auto');
-      if (language.value === 'plaintext') return t('plainText');
+      if (language.value === 'plaintext') return t('plaintext');
       return language.label;
     },
     [t]
@@ -118,7 +118,7 @@ function CodeBlockCombobox() {
         >
           {getLanguageLabel(
             languages.find((language) => language.value === value) ?? {
-              label: t('plainText'),
+              label: t('plaintext'),
               value: 'plaintext',
             }
           )}
