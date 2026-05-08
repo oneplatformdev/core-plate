@@ -54,8 +54,9 @@ const collectReachableSourceFiles = () => {
   const entry = fileURLToPath(new URL('./src/index.ts', import.meta.url));
   const entries = new Set<string>();
   const stack = [entry];
-  const importPattern =
+  const importFromPattern =
     /(?:import|export)(?:[\s\S]*?)from\s*['"]([^'"]+)['"]/g;
+  const dynamicImportPattern = /import\(\s*['"]([^'"]+)['"]\s*\)/g;
 
   while (stack.length > 0) {
     const current = stack.pop();
@@ -69,7 +70,15 @@ const collectReachableSourceFiles = () => {
     const source = fs.readFileSync(current, 'utf8');
     let match: RegExpExecArray | null;
 
-    while ((match = importPattern.exec(source))) {
+    while ((match = importFromPattern.exec(source))) {
+      const resolved = resolveSourceImport(current, match[1]);
+
+      if (resolved) {
+        stack.push(resolved);
+      }
+    }
+
+    while ((match = dynamicImportPattern.exec(source))) {
       const resolved = resolveSourceImport(current, match[1]);
 
       if (resolved) {

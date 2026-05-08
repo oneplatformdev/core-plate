@@ -25,7 +25,7 @@ import { MediaUploadToast } from '@/components/ui/media-upload-toast';
 import { VideoElement } from '@/components/ui/media-video-node';
 
 const MediaEmbedElementLazy = React.lazy(() =>
-  import('@/components/ui/media-embed-node').then((m) => ({
+  import('./ui/media-embed-node').then((m) => ({
     default: m.MediaEmbedElement,
   }))
 );

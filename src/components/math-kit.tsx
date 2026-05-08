@@ -9,13 +9,13 @@ import { MathRules } from '@platejs/math';
 import { EquationPlugin, InlineEquationPlugin } from '@platejs/math/react';
 
 const EquationElementLazy = React.lazy(() =>
-  import('@/components/ui/equation-node').then((m) => ({
+  import('./ui/equation-node').then((m) => ({
     default: m.EquationElement,
   }))
 );
 
 const InlineEquationElementLazy = React.lazy(() =>
-  import('@/components/ui/equation-node').then((m) => ({
+  import('./ui/equation-node').then((m) => ({
     default: m.InlineEquationElement,
   }))
 );
