@@ -56,7 +56,7 @@ export function CalloutElement({
             </Button>
           }
         >
-          <EmojiPicker {...emojiPickerState} {...calloutProps} />
+          <EmojiPicker locale={"uk"} {...emojiPickerState} {...calloutProps} />
         </EmojiPopover>
         <div className="w-full">{children}</div>
       </div>
