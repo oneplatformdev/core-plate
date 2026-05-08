@@ -17,7 +17,6 @@ import {
   Heading4Icon,
   ListIcon,
   ListOrderedIcon,
-  PilcrowIcon,
   QuoteIcon,
   SquareIcon,
 } from 'lucide-react';
