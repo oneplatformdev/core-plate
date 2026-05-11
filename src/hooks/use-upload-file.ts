@@ -13,6 +13,9 @@ interface UseUploadFileProps {
   onUploadError?: (error: unknown) => void;
 }
 
+const MAX_VIDEO_SIZE_BYTES = 128 * 1024 * 1024;
+const MAX_IMAGE_SIZE_BYTES = 1 * 1024 * 1024;
+
 export function useUploadFile({
   onUploadComplete,
   onUploadError,
@@ -64,6 +67,13 @@ export function useUploadFile({
     setUploadingFile(file);
 
     try {
+      if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE_BYTES) {
+        throw new Error('Video file is too large. Maximum size is 128MB.');
+      }
+      if (file.type.startsWith('image/') && file.size > MAX_IMAGE_SIZE_BYTES) {
+        throw new Error('Image file is too large. Maximum size is 1MB.');
+      }
+
       if (!uploadWithConsumer) {
         throw new Error(
           'useUploadFile: no upload handler is configured. Wrap the editor in <FileUploadContext.Provider value={{ onUploadFile }}> or pass `onUploadFile` to <PlateEditor />.'

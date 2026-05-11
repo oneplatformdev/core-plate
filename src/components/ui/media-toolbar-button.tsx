@@ -180,17 +180,26 @@ function MediaUrlDialogContent({
   const editor = useEditorRef();
   const [url, setUrl] = React.useState('');
 
+  const isDirectVideoFileUrl = React.useCallback((value: string) => {
+    return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?(#.*)?$/i.test(value);
+  }, []);
+
   const embedMedia = React.useCallback(() => {
     if (!isUrl(url)) return toast.error(t('invalidUrl'));
 
     setOpen(false);
+    const resolvedType =
+      nodeType === KEYS.video && !isDirectVideoFileUrl(url)
+        ? KEYS.mediaEmbed
+        : nodeType;
+
     editor.tf.insertNodes({
       children: [{ text: '' }],
-      name: nodeType === KEYS.file ? url.split('/').pop() : undefined,
-      type: nodeType,
+      name: resolvedType === KEYS.file ? url.split('/').pop() : undefined,
+      type: resolvedType,
       url,
     });
-  }, [url, t, setOpen, editor.tf, nodeType]);
+  }, [url, t, setOpen, editor.tf, nodeType, isDirectVideoFileUrl]);
 
   return (
     <>
