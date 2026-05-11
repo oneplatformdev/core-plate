@@ -89,14 +89,18 @@ const insertBlockMap: Record<
 
     editor.tf.insertNodes(toggleNode, { at: insertPath });
 
-    if (toggleNode.id) {
-      editor.getApi(TogglePlugin).toggle.toggleIds([toggleNode.id as string], true);
+    const insertedToggle = editor.api.node<TElement>(insertPath)?.[0];
+    const toggleId = (insertedToggle?.id ?? toggleNode.id) as string | undefined;
+
+    if (toggleId) {
+      editor.getApi(TogglePlugin).toggle.toggleIds([toggleId], true);
     }
 
     const start = editor.api.start(insertPath);
 
     if (start) {
       editor.tf.select(start);
+      editor.tf.focus();
     }
   },
   [KEYS.toc]: (editor) => insertToc(editor, { select: true }),

@@ -122,6 +122,10 @@ export function InsertToolbarButton(props: DropdownMenuProps) {
 
       <DropdownMenuContent
         className="flex max-h-[60vh] min-w-[240px] flex-col overflow-y-auto"
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+          editor.tf.focus();
+        }}
         align={inOverflowMenu ? 'end' : 'start'}
         side={inOverflowMenu ? 'left' : 'bottom'}
         style={{ minWidth: 260, width: 260 }}
