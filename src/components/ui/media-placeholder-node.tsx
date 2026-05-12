@@ -93,6 +93,7 @@ export const PlaceholderElement = withHOC(
       if (!uploadedFile) return;
 
       const path = editor.api.findPath(element);
+      if (!path) return;
 
       editor.tf.withoutSaving(() => {
         editor.tf.removeNodes({ at: path });
@@ -116,8 +117,12 @@ export const PlaceholderElement = withHOC(
       // Keep editor active after async placeholder replacement.
       requestAnimationFrame(() => {
         editor.tf.focus();
-        const nextPath = PathApi.next(path);
-        editor.tf.select(nextPath);
+        try {
+          const nextPath = PathApi.next(path);
+          editor.tf.select(nextPath);
+        } catch {
+          editor.tf.select(editor.api.end([]));
+        }
       });
 
       api.placeholder.removeUploadingFile(element.id as string);
