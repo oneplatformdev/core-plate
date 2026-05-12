@@ -41,7 +41,11 @@ import {
 import { cn } from '@/lib/utils';
 import { ToolbarButton } from '@/components/ui/toolbar';
 import { usePlateI18n } from '@/i18n/provider';
+import { UKRAINIAN_EMOJI_ALIASES } from '@/lib/emoji-uk-aliases';
 import { useToolbarOverflowMenu } from './toolbar-overflow-context';
+
+const normalizeEmojiSearchText = (value: string) =>
+  value.toLocaleLowerCase('uk-UA').trim();
 
 export function EmojiToolbarButton({
   options,
@@ -171,6 +175,60 @@ export function EmojiPicker({
     clearSearch();
   }, [clearSearch]);
 
+  const allEmojis = React.useMemo(() => {
+    const emojiMap = new Map<string, Emoji>();
+
+    emojiLibrary
+      .getGrid()
+      .sections()
+      .forEach(({ id: categoryId }) => {
+        const section = emojiLibrary.getGrid().section(categoryId);
+        section.getRows().forEach((row: GridRow) => {
+          row.elements.forEach((emojiId) => {
+            if (!emojiMap.has(emojiId)) {
+              emojiMap.set(emojiId, emojiLibrary.getEmoji(emojiId));
+            }
+          });
+        });
+      });
+
+    return [...emojiMap.values()];
+  }, [emojiLibrary]);
+
+  const normalizedSearchInput = React.useMemo(
+    () => normalizeEmojiSearchText(searchInput),
+    [searchInput]
+  );
+
+  const ukrainianSearchResult = React.useMemo(() => {
+    if (locale !== 'uk' || !normalizedSearchInput) return [];
+
+    return allEmojis.filter((item) => {
+      const aliases = UKRAINIAN_EMOJI_ALIASES[item.id] ?? [];
+      const searchable = [item.id, item.name ?? '', ...aliases];
+
+      return searchable.some((value) =>
+        normalizeEmojiSearchText(value).includes(normalizedSearchInput)
+      );
+    });
+  }, [allEmojis, locale, normalizedSearchInput]);
+
+  const effectiveSearchResult = React.useMemo(() => {
+    if (locale !== 'uk' || !normalizedSearchInput) return searchResult;
+
+    const merged = new Map<string, Emoji>();
+    [...searchResult, ...ukrainianSearchResult].forEach((item) => {
+      merged.set(item.id, item);
+    });
+
+    return [...merged.values()];
+  }, [locale, normalizedSearchInput, searchResult, ukrainianSearchResult]);
+
+  const effectiveHasFound =
+    locale === 'uk' && normalizedSearchInput
+      ? effectiveSearchResult.length > 0
+      : hasFound;
+
   return (
     <div
       className={cn(
@@ -203,13 +261,13 @@ export function EmojiPicker({
         i18n={localizedI18n}
         isSearching={isSearching}
         refs={refs}
-        searchResult={searchResult}
+        searchResult={effectiveSearchResult}
         settings={settings}
         visibleCategories={visibleCategories}
       />
       <EmojiPickerPreview
         emoji={emoji}
-        hasFound={hasFound}
+        hasFound={effectiveHasFound}
         i18n={localizedI18n}
         isSearching={isSearching}
       />
