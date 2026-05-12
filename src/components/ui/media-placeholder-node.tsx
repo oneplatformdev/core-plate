@@ -123,7 +123,16 @@ export const PlaceholderElement = withHOC(
 
       requestAnimationFrame(() => {
         restoreFocus();
-        setTimeout(restoreFocus, 0);
+        setTimeout(() => {
+          const activeElement = document.activeElement as HTMLElement | null;
+          const isInteractingWithOverlay = !!activeElement?.closest(
+            '[data-slot="dropdown-menu-content"], [data-slot="alert-dialog-content"], [data-slot="popover-content"], .ignore-click-outside\\/toolbar'
+          );
+
+          if (isInteractingWithOverlay) return;
+
+          restoreFocus();
+        }, 10);
       });
 
       api.placeholder.removeUploadingFile(element.id as string);

@@ -179,6 +179,20 @@ function MediaUrlDialogContent({
   const { t } = usePlateI18n();
   const editor = useEditorRef();
   const [url, setUrl] = React.useState('');
+  const scheduleRestoreFocus = React.useCallback(() => {
+    setTimeout(() => {
+      const activeElement = document.activeElement as HTMLElement | null;
+      const isInteractingWithOverlay = !!activeElement?.closest(
+        '[data-slot="dropdown-menu-content"], [data-slot="alert-dialog-content"], [data-slot="popover-content"], .ignore-click-outside\\/toolbar'
+      );
+
+      if (isInteractingWithOverlay) return;
+
+      editor.tf.select(editor.api.end([]));
+      editor.tf.collapse({ edge: 'end' });
+      editor.tf.focus();
+    }, 10);
+  }, [editor]);
 
   const isDirectVideoFileUrl = React.useCallback((value: string) => {
     return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?(#.*)?$/i.test(value);
@@ -199,7 +213,8 @@ function MediaUrlDialogContent({
       type: resolvedType,
       url,
     });
-  }, [url, t, setOpen, editor.tf, nodeType, isDirectVideoFileUrl]);
+    scheduleRestoreFocus();
+  }, [url, t, setOpen, editor.tf, nodeType, isDirectVideoFileUrl, scheduleRestoreFocus]);
 
   return (
     <>
