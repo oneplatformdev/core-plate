@@ -11,7 +11,7 @@ import {
   updateUploadHistory,
 } from '@platejs/media/react';
 import { AudioLines, FileUp, Film, ImageIcon, Loader2Icon } from 'lucide-react';
-import { KEYS, PathApi } from 'platejs';
+import { KEYS } from 'platejs';
 import { PlateElement, useEditorPlugin, withHOC } from 'platejs/react';
 import { useFilePicker } from 'use-file-picker';
 
@@ -115,14 +115,15 @@ export const PlaceholderElement = withHOC(
       });
 
       // Keep editor active after async placeholder replacement.
-      requestAnimationFrame(() => {
+      const restoreFocus = () => {
+        editor.tf.select(editor.api.end([]));
+        editor.tf.collapse({ edge: 'end' });
         editor.tf.focus();
-        try {
-          const nextPath = PathApi.next(path);
-          editor.tf.select(nextPath);
-        } catch {
-          editor.tf.select(editor.api.end([]));
-        }
+      };
+
+      requestAnimationFrame(() => {
+        restoreFocus();
+        setTimeout(restoreFocus, 0);
       });
 
       api.placeholder.removeUploadingFile(element.id as string);
