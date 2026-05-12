@@ -50,6 +50,28 @@ export const MediaKit = [
   PlaceholderPlugin.configure({
     options: {
       disableEmptyPlaceholder: true,
+      uploadConfig: {
+        [KEYS.audio]: {
+          maxFileCount: 1,
+          maxFileSize: '64MB',
+        },
+        [KEYS.file]: {
+          maxFileCount: 1,
+          maxFileSize: '64MB',
+        },
+        [KEYS.img]: {
+          maxFileCount: 1,
+          maxFileSize: '64MB',
+        },
+        [KEYS.mediaEmbed]: {
+          maxFileCount: 1,
+          maxFileSize: '64MB',
+        },
+        [KEYS.video]: {
+          maxFileCount: 1,
+          maxFileSize: '128MB',
+        },
+      },
     },
     render: { afterEditable: MediaUploadToast, node: PlaceholderElement },
   }),
