@@ -14,7 +14,7 @@ interface UseUploadFileProps {
 }
 
 const MAX_VIDEO_SIZE_BYTES = 128 * 1024 * 1024;
-const MAX_IMAGE_SIZE_BYTES = 1 * 1024 * 1024;
+const MAX_IMAGE_SIZE_BYTES = 64 * 1024 * 1024;
 
 export function useUploadFile({
   onUploadComplete,
