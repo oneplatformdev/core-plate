@@ -50,6 +50,7 @@ export const MediaKit = [
   PlaceholderPlugin.configure({
     options: {
       disableEmptyPlaceholder: true,
+      disableFileDrop: true,
       uploadConfig: {
         [KEYS.audio]: {
           mediaType: KEYS.audio,

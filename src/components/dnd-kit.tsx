@@ -6,7 +6,7 @@ import { PlaceholderPlugin } from '@platejs/media/react';
 export const DndKit = [
   DndPlugin.configure({
     options: {
-      enableScroller: false,
+      enableScroller: true,
       onDropFiles: ({ dragItem, editor, target }) => {
         editor
           .getTransforms(PlaceholderPlugin)
