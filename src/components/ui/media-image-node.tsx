@@ -10,6 +10,7 @@ import { Image, ImagePlugin, useMediaState } from '@platejs/media/react';
 import { ResizableProvider, useResizableValue } from '@platejs/resizable';
 import { PlateElement, withHOC } from 'platejs/react';
 
+import { usePlateI18n } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 
 import { Caption, CaptionTextarea } from './caption';
@@ -23,6 +24,7 @@ import {
 export const ImageElement = withHOC(
   ResizableProvider,
   function ImageElement(props: PlateElementProps<TImageElement>) {
+    const { t } = usePlateI18n();
     const { align = 'center', focused, readOnly, selected } = useMediaState();
     const width = useResizableValue('width');
 
@@ -69,7 +71,7 @@ export const ImageElement = withHOC(
                 onFocus={(e) => {
                   e.preventDefault();
                 }}
-                placeholder="Write a caption..."
+                placeholder={t('writeCaption')}
               />
             </Caption>
           </figure>
@@ -80,3 +82,4 @@ export const ImageElement = withHOC(
     );
   }
 );
+

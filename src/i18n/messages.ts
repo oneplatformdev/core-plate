@@ -35,8 +35,13 @@ export const defaultPlateMessages = {
   emoji: 'Emoji',
   footnote: 'Footnote',
   link: 'Link',
+  editLink: 'Edit link',
+  openLinkInNewTab: 'Open link in a new tab',
   pasteLink: 'Paste link',
+  pasteEmbedLink: 'Paste the embed link...',
   textToDisplay: 'Text to display',
+  caption: 'Caption',
+  writeCaption: 'Write a caption...',
   dragToMove: 'Drag to move',
   dragToMoveColumn: 'Drag to move column',
   noLanguageFound: 'No language found.',
@@ -279,6 +284,12 @@ export const ukPlateMessages: Record<PlateMessageKey, string> = {
   lowerRomanList: 'Нижній римський (i, ii, iii)',
   upperRomanList: 'Верхній римський (I, II, III)',
   typeSomethingPlaceholder: 'Введіть текст...',
+  editLink: 'Редагувати посилання',
+  openLinkInNewTab: 'Відкрити посилання в новій вкладці',
+  pasteEmbedLink: 'Вставте посилання для вбудовування...',
+  caption: 'Підпис',
+  writeCaption: 'Додайте підпис...',
 };
+
 
 

@@ -137,7 +137,7 @@ export function LinkFloatingToolbar({
         type="button"
         {...editButtonProps}
       >
-        Edit link
+        {t('editLink')}
       </button>
 
       <Separator orientation="vertical" />
@@ -175,6 +175,7 @@ export function LinkFloatingToolbar({
 function LinkOpenButton() {
   const editor = useEditorRef();
   const selection = useEditorSelection();
+  const { t } = usePlateI18n();
 
   const attributes = React.useMemo(
     () => {
@@ -201,10 +202,11 @@ function LinkOpenButton() {
       onMouseOver={(e) => {
         e.stopPropagation();
       }}
-      aria-label="Open link in a new tab"
+      aria-label={t('openLinkInNewTab')}
       target="_blank"
     >
       <ExternalLink width={18} />
     </a>
   );
 }
+
