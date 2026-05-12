@@ -8,12 +8,12 @@ import { SlateElement } from 'platejs/static';
 const headingVariants = cva('relative mb-1', {
   variants: {
     variant: {
-      h1: 'mt-[1.6em] pb-1 font-bold font-heading text-5xl',
-      h2: 'mt-[1.4em] pb-px font-heading font-semibold text-4xl tracking-tight',
-      h3: 'mt-[1em] pb-px font-heading font-semibold text-2xl tracking-tight',
-      h4: 'mt-[0.75em] font-heading font-semibold text-base tracking-tight',
-      h5: 'mt-[0.75em] font-semibold text-lg tracking-tight',
-      h6: 'mt-[0.75em] font-semibold text-base tracking-tight',
+      h1: 'mt-[0.68em] pb-1 font-bold font-heading text-5xl',
+      h2: 'mt-[0.6em] pb-px font-heading font-semibold text-4xl tracking-tight',
+      h3: 'mt-[0.47em] pb-px font-heading font-semibold text-2xl tracking-tight',
+      h4: 'mt-[0.38em] font-heading font-semibold text-base tracking-tight',
+      h5: 'mt-[0.38em] font-semibold text-lg tracking-tight',
+      h6: 'mt-[0.38em] font-semibold text-base tracking-tight',
     },
   },
 });
