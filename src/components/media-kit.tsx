@@ -52,28 +52,32 @@ export const MediaKit = [
       disableEmptyPlaceholder: true,
       disableFileDrop: true,
       uploadConfig: {
-        [KEYS.audio]: {
+        audio: {
           mediaType: KEYS.audio,
           maxFileCount: 1,
           maxFileSize: '128MB',
         },
-        [KEYS.file]: {
+        blob: {
           mediaType: KEYS.file,
           maxFileCount: 1,
           maxFileSize: '128MB',
         },
-
-        [KEYS.mediaEmbed]: {
-          mediaType: KEYS.mediaEmbed,
+        pdf: {
+          mediaType: KEYS.file,
           maxFileCount: 1,
           maxFileSize: '128MB',
         },
-        [KEYS.video]: {
+        text: {
+          mediaType: KEYS.file,
+          maxFileCount: 1,
+          maxFileSize: '128MB',
+        },
+        video: {
           mediaType: KEYS.video,
           maxFileCount: 1,
           maxFileSize: '128MB',
         },
-        [KEYS.img]: {
+        image: {
           mediaType: KEYS.img,
           maxFileCount: 1,
           maxFileSize: '128MB',
