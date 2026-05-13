@@ -139,7 +139,17 @@ export function InsertToolbarButton(props: DropdownMenuProps) {
                 className="min-w-[220px] gap-2 whitespace-nowrap"
                 onSelect={() => {
                   onSelect(editor, value);
-                  if (focusEditor !== false) focusEditorReliably(editor);
+                  if (focusEditor !== false) {
+                    // Three passes:
+                    //  1. sync — for the immediate case (sandbox / no focus trap)
+                    //  2. rAF — after Radix's onCloseAutoFocus runs
+                    //  3. timeout — after DropdownMenuContent fully unmounts
+                    //     and its FocusScope cleanup tries to restore focus
+                    //     to the dropdown trigger.
+                    focusEditorReliably(editor);
+                    requestAnimationFrame(() => focusEditorReliably(editor));
+                    setTimeout(() => focusEditorReliably(editor), 80);
+                  }
                 }}
               >
                 {icon}
