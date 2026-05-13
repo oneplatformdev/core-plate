@@ -122,7 +122,7 @@ export function InsertToolbarButton(props: DropdownMenuProps) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="flex max-h-[60vh] min-w-[240px] flex-col overflow-y-auto"
+        className="flex max-h-[55vh] min-w-[240px] flex-col overflow-y-auto"
         onCloseAutoFocus={(e) => {
           e.preventDefault();
           focusEditorReliably(editor);

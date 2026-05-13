@@ -16,22 +16,8 @@ import type { PlateEditor } from 'platejs/react';
 // (caller decides whether to collapse / select end).
 export function focusEditorReliably(editor: PlateEditor): void {
   const domEditor = editor.api.toDOMNode(editor);
-  const activeBefore = document.activeElement;
-  console.debug('[plate-debug] focusEditorReliably', {
-    domEditor,
-    activeBefore,
-    sameAlready: activeBefore === domEditor,
-  });
   if (domEditor && document.activeElement !== domEditor) {
     domEditor.focus({ preventScroll: true });
-    console.debug('[plate-debug] after domEditor.focus()', document.activeElement);
   }
   editor.tf.focus();
-  console.debug('[plate-debug] after editor.tf.focus()', document.activeElement);
-  setTimeout(() => {
-    console.debug('[plate-debug] activeElement after 50ms', document.activeElement);
-  }, 50);
-  setTimeout(() => {
-    console.debug('[plate-debug] activeElement after 200ms', document.activeElement);
-  }, 200);
 }
