@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { focusEditorReliably } from '@/lib/focus-editor';
 
 import {
   ToolbarSplitButton,
@@ -183,14 +184,14 @@ function MediaUrlDialogContent({
     setTimeout(() => {
       const activeElement = document.activeElement as HTMLElement | null;
       const isInteractingWithOverlay = !!activeElement?.closest(
-        '[data-slot="dropdown-menu-content"], [data-slot="alert-dialog-content"], [data-slot="popover-content"], .ignore-click-outside\\/toolbar'
+        '[data-slot="dropdown-menu-content"], [data-slot="alert-dialog-content"], [data-slot="popover-content"]'
       );
 
       if (isInteractingWithOverlay) return;
 
       editor.tf.select(editor.api.end([]));
       editor.tf.collapse({ edge: 'end' });
-      editor.tf.focus();
+      focusEditorReliably(editor);
     }, 10);
   }, [editor]);
 

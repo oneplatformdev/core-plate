@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { usePlateI18n } from '@/i18n/provider';
 import { insertBlock, insertInlineElement } from '@/components/transforms';
+import { focusEditorReliably } from '@/lib/focus-editor';
 
 import { ToolbarButton, ToolbarMenuGroup } from './toolbar';
 import { useToolbarOverflowMenu } from './toolbar-overflow-context';
@@ -124,7 +125,7 @@ export function InsertToolbarButton(props: DropdownMenuProps) {
         className="flex max-h-[60vh] min-w-[240px] flex-col overflow-y-auto"
         onCloseAutoFocus={(e) => {
           e.preventDefault();
-          editor.tf.focus();
+          focusEditorReliably(editor);
         }}
         align={inOverflowMenu ? 'end' : 'start'}
         side={inOverflowMenu ? 'left' : 'bottom'}
@@ -138,7 +139,7 @@ export function InsertToolbarButton(props: DropdownMenuProps) {
                 className="min-w-[220px] gap-2 whitespace-nowrap"
                 onSelect={() => {
                   onSelect(editor, value);
-                  if (focusEditor !== false) editor.tf.focus();
+                  if (focusEditor !== false) focusEditorReliably(editor);
                 }}
               >
                 {icon}
