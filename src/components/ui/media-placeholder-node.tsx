@@ -116,6 +116,22 @@ export const PlaceholderElement = withHOC(
 
       // Keep editor active after async placeholder replacement.
       const restoreFocus = () => {
+        const activeElement = document.activeElement as HTMLElement | null;
+        const isInteractingWithOverlay = !!activeElement?.closest(
+          '[data-slot="dropdown-menu-content"], [data-slot="alert-dialog-content"], [data-slot="popover-content"], .ignore-click-outside\\/toolbar'
+        );
+        if (isInteractingWithOverlay) return;
+
+        // Direct DOM focus first — Slate's `editor.tf.focus()` can no-op when
+        // the editor's `[contenteditable]` host element isn't the current
+        // activeElement (e.g. focus was stolen by a file picker or a Radix
+        // focus-scope). Once the host has focus, Slate can safely reapply
+        // selection.
+        const domEditor = editor.api.toDOMNode(editor);
+        if (domEditor && document.activeElement !== domEditor) {
+          domEditor.focus({ preventScroll: true });
+        }
+
         editor.tf.select(editor.api.end([]));
         editor.tf.collapse({ edge: 'end' });
         editor.tf.focus();
@@ -123,16 +139,8 @@ export const PlaceholderElement = withHOC(
 
       requestAnimationFrame(() => {
         restoreFocus();
-        setTimeout(() => {
-          const activeElement = document.activeElement as HTMLElement | null;
-          const isInteractingWithOverlay = !!activeElement?.closest(
-            '[data-slot="dropdown-menu-content"], [data-slot="alert-dialog-content"], [data-slot="popover-content"], .ignore-click-outside\\/toolbar'
-          );
-
-          if (isInteractingWithOverlay) return;
-
-          restoreFocus();
-        }, 10);
+        setTimeout(restoreFocus, 10);
+        setTimeout(restoreFocus, 50);
       });
 
       api.placeholder.removeUploadingFile(element.id as string);
