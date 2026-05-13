@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { FileUploadContext, type UploadResultLike } from '@/context/file-upload-context';
 import type { ClientUploadedFileData } from 'uploadthing/types';
+import { usePlateI18n } from '@/i18n/provider';
 
 import { z } from 'zod';
 
@@ -23,6 +24,7 @@ export function useUploadFile({
     onUploadFile: uploadWithConsumer,
     onUploadError: consumerOnUploadError,
   } = React.useContext(FileUploadContext);
+  const { t } = usePlateI18n();
   const [uploadedFile, setUploadedFile] = React.useState<UploadedFile>();
   const [uploadingFile, setUploadingFile] = React.useState<File>();
   const [progress, setProgress] = React.useState<number>(0);
@@ -70,10 +72,20 @@ export function useUploadFile({
 
     try {
       if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE_BYTES) {
-        throw new Error('Video file is too large. Maximum size is 128MB.');
+        throw new Error(
+          t('videoTooLarge').replace(
+            '{{size}}',
+            String(MAX_VIDEO_SIZE_BYTES / (1024 * 1024))
+          )
+        );
       }
       if (file.type.startsWith('image/') && file.size > MAX_IMAGE_SIZE_BYTES) {
-        throw new Error('Image file is too large. Maximum size is 16MB.');
+        throw new Error(
+          t('imageTooLarge').replace(
+            '{{size}}',
+            String(MAX_IMAGE_SIZE_BYTES / (1024 * 1024))
+          )
+        );
       }
 
       if (!uploadWithConsumer) {
