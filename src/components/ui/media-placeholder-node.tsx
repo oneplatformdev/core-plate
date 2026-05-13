@@ -84,10 +84,20 @@ export const PlaceholderElement = withHOC(
 
     const replaceCurrentPlaceholder = React.useCallback(
       (file: File) => {
-        void uploadFile(file);
         api.placeholder.addUploadingFile(element.id as string, file);
+        uploadFile(file).catch(() => {
+          // Error already surfaced via onUploadError. Tear down placeholder
+          // so the editor doesn't show a stuck "uploading" indicator.
+          api.placeholder.removeUploadingFile(element.id as string);
+          const path = editor.api.findPath(element);
+          if (path) {
+            editor.tf.withoutSaving(() => {
+              editor.tf.removeNodes({ at: path });
+            });
+          }
+        });
       },
-      [api.placeholder, element.id, uploadFile]
+      [api.placeholder, editor, element, uploadFile]
     );
 
     React.useEffect(() => {

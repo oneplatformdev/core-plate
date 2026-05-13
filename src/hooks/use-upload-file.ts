@@ -3,7 +3,6 @@ import * as React from 'react';
 import { FileUploadContext, type UploadResultLike } from '@/context/file-upload-context';
 import type { ClientUploadedFileData } from 'uploadthing/types';
 
-import { toast } from 'sonner';
 import { z } from 'zod';
 
 export type UploadedFile<T = unknown> = ClientUploadedFileData<T>;
@@ -14,13 +13,16 @@ interface UseUploadFileProps {
 }
 
 const MAX_VIDEO_SIZE_BYTES = 128 * 1024 * 1024;
-const MAX_IMAGE_SIZE_BYTES = 64 * 1024 * 1024;
+const MAX_IMAGE_SIZE_BYTES = 16 * 1024 * 1024;
 
 export function useUploadFile({
   onUploadComplete,
   onUploadError,
 }: UseUploadFileProps = {}) {
-  const { onUploadFile: uploadWithConsumer } = React.useContext(FileUploadContext);
+  const {
+    onUploadFile: uploadWithConsumer,
+    onUploadError: consumerOnUploadError,
+  } = React.useContext(FileUploadContext);
   const [uploadedFile, setUploadedFile] = React.useState<UploadedFile>();
   const [uploadingFile, setUploadingFile] = React.useState<File>();
   const [progress, setProgress] = React.useState<number>(0);
@@ -71,7 +73,7 @@ export function useUploadFile({
         throw new Error('Video file is too large. Maximum size is 128MB.');
       }
       if (file.type.startsWith('image/') && file.size > MAX_IMAGE_SIZE_BYTES) {
-        throw new Error('Image file is too large. Maximum size is 1MB.');
+        throw new Error('Image file is too large. Maximum size is 16MB.');
       }
 
       if (!uploadWithConsumer) {
@@ -92,44 +94,9 @@ export function useUploadFile({
 
       return normalized;
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-
-      const message =
-        errorMessage.length > 0
-          ? errorMessage
-          : 'Something went wrong, please try again later.';
-
-      toast.error(message);
-
+      consumerOnUploadError?.(error, file);
       onUploadError?.(error);
-
-      // Mock upload for unauthenticated users
-      // toast.info('User not logged in. Mocking upload process.');
-      const mockUploadedFile = {
-        key: 'mock-key-0',
-        appUrl: `https://mock-app-url.com/${file.name}`,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        url: URL.createObjectURL(file),
-      } as UploadedFile;
-
-      // Simulate upload progress
-      let progress = 0;
-
-      const simulateProgress = async () => {
-        while (progress < 100) {
-          await new Promise((resolve) => setTimeout(resolve, 50));
-          progress += 2;
-          setProgress(Math.min(progress, 100));
-        }
-      };
-
-      await simulateProgress();
-
-      setUploadedFile(mockUploadedFile);
-
-      return mockUploadedFile;
+      throw error;
     } finally {
       setProgress(0);
       setIsUploading(false);
@@ -160,8 +127,3 @@ export function getErrorMessage(err: unknown) {
   return unknownError;
 }
 
-export function showErrorToast(err: unknown) {
-  const errorMessage = getErrorMessage(err);
-
-  return toast.error(errorMessage);
-}
