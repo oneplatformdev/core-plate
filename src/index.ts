@@ -2,8 +2,12 @@ import './index.css';
 
 export { PlateEditor, type PlateEditorProps } from '@/components/core-plate-editor';
 export { StaticEditor, type StaticEditorProps } from '@/components/core-plate-static-editor';
-export { EditorKit, useEditor } from '@/components/editor-kit';
+export { createEditorKit, EditorKit, useEditor } from '@/components/editor-kit';
 export type { EditorValue } from '@/components/plate-types';
 export { Editor, EditorContainer, EditorView, type EditorProps } from '@/components/ui/editor';
+export { FixedToolbar } from '@/components/ui/fixed-toolbar';
+export { FixedToolbarButtons } from '@/components/ui/fixed-toolbar-buttons';
 export { defaultPlateMessages, ukPlateMessages, type PlateMessageKey, type PlateMessages } from '@/i18n/messages';
+export { PlateI18nProvider, usePlateI18n } from '@/i18n/provider';
+export { FileUploadContext, type FileUploadContextValue, type UploadResultLike } from '@/context/file-upload-context';
 export { UploadErrorCode, type UploadError } from '@platejs/media/react';

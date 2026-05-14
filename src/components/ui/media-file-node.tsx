@@ -10,11 +10,13 @@ import { ResizableProvider } from '@platejs/resizable';
 import { FileUp } from 'lucide-react';
 import { PlateElement, useReadOnly, withHOC } from 'platejs/react';
 
+import { usePlateI18n } from '@/i18n/provider';
 import { Caption, CaptionTextarea } from './caption';
 
 export const FileElement = withHOC(
   ResizableProvider,
   function FileElement(props: PlateElementProps<TFileElement>) {
+    const { t } = usePlateI18n();
     const readOnly = useReadOnly();
     const { name, unsafeUrl } = useMediaState();
 
@@ -38,7 +40,7 @@ export const FileElement = withHOC(
             <CaptionTextarea
               className="text-left"
               readOnly={readOnly}
-              placeholder="Write a caption..."
+              placeholder={t('writeCaption')}
             />
           </Caption>
         </a>
@@ -47,3 +49,4 @@ export const FileElement = withHOC(
     );
   }
 );
+

@@ -16,6 +16,7 @@ import { PlateElement, useEditorPlugin, withHOC } from 'platejs/react';
 import { useFilePicker } from 'use-file-picker';
 
 import { cn } from '@/lib/utils';
+import { focusEditorReliably } from '@/lib/focus-editor';
 import { useUploadFile } from '@/hooks/use-upload-file';
 
 const CONTENT: Record<
@@ -83,16 +84,27 @@ export const PlaceholderElement = withHOC(
 
     const replaceCurrentPlaceholder = React.useCallback(
       (file: File) => {
-        void uploadFile(file);
         api.placeholder.addUploadingFile(element.id as string, file);
+        uploadFile(file).catch(() => {
+          // Error already surfaced via onUploadError. Tear down placeholder
+          // so the editor doesn't show a stuck "uploading" indicator.
+          api.placeholder.removeUploadingFile(element.id as string);
+          const path = editor.api.findPath(element);
+          if (path) {
+            editor.tf.withoutSaving(() => {
+              editor.tf.removeNodes({ at: path });
+            });
+          }
+        });
       },
-      [api.placeholder, element.id, uploadFile]
+      [api.placeholder, editor, element, uploadFile]
     );
 
     React.useEffect(() => {
       if (!uploadedFile) return;
 
       const path = editor.api.findPath(element);
+      if (!path) return;
 
       editor.tf.withoutSaving(() => {
         editor.tf.removeNodes({ at: path });
@@ -111,6 +123,23 @@ export const PlaceholderElement = withHOC(
         editor.tf.insertNodes(node, { at: path });
 
         updateUploadHistory(editor, node);
+      });
+
+      const restoreFocus = () => {
+        const activeElement = document.activeElement as HTMLElement | null;
+        const isInteractingWithOverlay = !!activeElement?.closest(
+          '[data-slot="dropdown-menu-content"], [data-slot="alert-dialog-content"], [data-slot="popover-content"]'
+        );
+        if (isInteractingWithOverlay) return;
+
+        editor.tf.select(editor.api.end([]));
+        editor.tf.collapse({ edge: 'end' });
+        focusEditorReliably(editor);
+      };
+
+      requestAnimationFrame(() => {
+        restoreFocus();
+        setTimeout(restoreFocus, 10);
       });
 
       api.placeholder.removeUploadingFile(element.id as string);

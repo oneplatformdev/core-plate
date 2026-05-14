@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import * as React from 'react';
 import LiteYouTubeEmbed from 'react-lite-youtube-embed';
@@ -14,6 +14,7 @@ import { useMediaState } from '@platejs/media/react';
 import { ResizableProvider, useResizableValue } from '@platejs/resizable';
 import { PlateElement, useEditorMounted, withHOC } from 'platejs/react';
 
+import { usePlateI18n } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 
 import { Caption, CaptionTextarea } from './caption';
@@ -28,6 +29,7 @@ export const VideoElement = withHOC(
   function VideoElement(
     props: PlateElementProps<TVideoElement & TResizableProps>
   ) {
+    const { t } = usePlateI18n();
     const {
       align = 'center',
       embed,
@@ -104,7 +106,7 @@ export const VideoElement = withHOC(
               {shouldRenderFileVideo && (
                 <div ref={handleRef}>
                   <video
-                    className="w-full max-w-full rounded-sm object-cover px-0"
+                    className="w-full max-w-full rounded-sm bg-black object-contain px-0"
                     src={unsafeUrl}
                     controls
                   />
@@ -129,7 +131,7 @@ export const VideoElement = withHOC(
           <Caption style={{ width }} align={align}>
             <CaptionTextarea
               readOnly={readOnly}
-              placeholder="Write a caption..."
+              placeholder={t('writeCaption')}
             />
           </Caption>
         </figure>
@@ -138,3 +140,4 @@ export const VideoElement = withHOC(
     );
   }
 );
+

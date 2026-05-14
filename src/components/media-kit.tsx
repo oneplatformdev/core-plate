@@ -50,12 +50,37 @@ export const MediaKit = [
   PlaceholderPlugin.configure({
     options: {
       disableEmptyPlaceholder: true,
+      disableFileDrop: true,
       uploadConfig: {
-        [KEYS.video]: {
+        audio: {
+          mediaType: KEYS.audio,
           maxFileCount: 1,
           maxFileSize: '128MB',
+        },
+        blob: {
+          mediaType: KEYS.file,
+          maxFileCount: 1,
+          maxFileSize: '128MB',
+        },
+        pdf: {
+          mediaType: KEYS.file,
+          maxFileCount: 1,
+          maxFileSize: '128MB',
+        },
+        text: {
+          mediaType: KEYS.file,
+          maxFileCount: 1,
+          maxFileSize: '128MB',
+        },
+        video: {
           mediaType: KEYS.video,
-          minFileCount: 1,
+          maxFileCount: 1,
+          maxFileSize: '128MB',
+        },
+        image: {
+          mediaType: KEYS.img,
+          maxFileCount: 1,
+          maxFileSize: '128MB',
         },
       },
     },

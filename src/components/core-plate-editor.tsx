@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 import type { UploadError } from '@platejs/media/react';
-
+import { createDragDropManager, type DragDropManager } from 'dnd-core';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { normalizeStaticValue, type Value } from 'platejs';
@@ -24,6 +24,19 @@ const defaultValue = normalizeStaticValue([
     type: 'p',
   },
 ]);
+
+const DND_MANAGER_KEY = '__OP_PLATE_DND_MANAGER__';
+
+function getDndManagerSingleton(): DragDropManager {
+  const g = globalThis as Record<string, unknown>;
+  const existing = g[DND_MANAGER_KEY] as DragDropManager | undefined;
+
+  if (existing) return existing;
+
+  const created = createDragDropManager(HTML5Backend);
+  g[DND_MANAGER_KEY] = created;
+  return created;
+}
 
 export type PlateEditorProps = {
   contentRef?: React.Ref<HTMLDivElement>;
@@ -118,6 +131,8 @@ export function PlateEditor({
 
   if (!editor) return null;
 
+  const dndManager = React.useMemo(() => getDndManagerSingleton(), []);
+
   return (
     <PlateI18nProvider locale={locale} messages={messages}>
       <FileUploadContext.Provider value={{ onUploadFile, onUploadValidateError }}>
@@ -126,7 +141,7 @@ export function PlateEditor({
             role="toolbar-wrapper"
             className="relative box-border min-h-full overflow-visible"
           >
-            <DndProvider backend={HTML5Backend}>
+            <DndProvider manager={dndManager}>
               <Plate
                 editor={editor}
                 onValueChange={({ value: nextValue }) => {

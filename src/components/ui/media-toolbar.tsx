@@ -23,6 +23,7 @@ import {
 } from 'platejs/react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
+import { usePlateI18n } from '@/i18n/provider';
 import {
   Popover,
   PopoverAnchor,
@@ -59,6 +60,7 @@ export function MediaToolbar({
     selectionCollapsed &&
     !isImagePreviewOpen;
   const isEditing = useFloatingMediaValue('isEditing');
+  const { t } = usePlateI18n();
 
   React.useEffect(() => {
     if (!open && isEditing) {
@@ -87,7 +89,7 @@ export function MediaToolbar({
 
               <FloatingMediaPrimitive.UrlInput
                 className={inputVariants()}
-                placeholder="Paste the embed link..."
+                placeholder={t('pasteEmbedLink')}
                 options={{ plugin }}
               />
             </div>
@@ -97,11 +99,11 @@ export function MediaToolbar({
             <FloatingMediaPrimitive.EditButton
               className={buttonVariants({ size: 'sm', variant: 'ghost' })}
             >
-              Edit link
+              {t('editLink')}
             </FloatingMediaPrimitive.EditButton>
 
             <CaptionButton size="sm" variant="ghost">
-              Caption
+              {t('caption')}
             </CaptionButton>
 
             <Separator orientation="vertical" className="mx-1 h-6" />
@@ -115,3 +117,4 @@ export function MediaToolbar({
     </Popover>
   );
 }
+
