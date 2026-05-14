@@ -12,6 +12,8 @@ import {
 } from '@platejs/caption/react';
 import { createPrimitiveComponent } from '@udecode/cn';
 import { cva } from 'class-variance-authority';
+import { KEYS } from 'platejs';
+import { useEditorRef, useElement } from 'platejs/react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -46,9 +48,30 @@ export function Caption({
 export function CaptionTextarea(
   props: React.ComponentProps<typeof CaptionTextareaPrimitive>
 ) {
+  const editor = useEditorRef();
+  const element = useElement();
+
   return (
     <CaptionTextareaPrimitive
       {...props}
+      maxLength={155}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+          e.preventDefault();
+
+          const path = editor.api.findPath(element);
+          if (!path) return;
+
+          const insertAt = [path[0] + 1];
+          editor.tf.insertNodes(
+            { type: KEYS.p, children: [{ text: '' }] },
+            { at: insertAt, select: true }
+          );
+          editor.tf.focus();
+          return;
+        }
+        props.onKeyDown?.(e);
+      }}
       className={cn(
         'mt-2 w-full resize-none border-none bg-inherit p-0 font-[inherit] text-inherit',
         'focus:outline-none focus:[&::placeholder]:opacity-0',
