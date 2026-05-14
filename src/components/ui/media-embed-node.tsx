@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import * as React from 'react';
 import LiteYouTubeEmbed from 'react-lite-youtube-embed';
@@ -12,6 +12,7 @@ import { MediaEmbedPlugin, useMediaState } from '@platejs/media/react';
 import { ResizableProvider, useResizableValue } from '@platejs/resizable';
 import { PlateElement, withHOC } from 'platejs/react';
 
+import { usePlateI18n } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 
 import { Caption, CaptionTextarea } from './caption';
@@ -25,6 +26,7 @@ import {
 export const MediaEmbedElement = withHOC(
   ResizableProvider,
   function MediaEmbedElement(props: PlateElementProps<TMediaEmbedElement>) {
+    const { t } = usePlateI18n();
     const {
       align = 'center',
       embed,
@@ -126,7 +128,7 @@ export const MediaEmbedElement = withHOC(
             </Resizable>
 
             <Caption style={{ width }} align={align}>
-              <CaptionTextarea placeholder="Write a caption..." />
+              <CaptionTextarea placeholder={t('writeCaption')} />
             </Caption>
           </figure>
 
@@ -136,3 +138,4 @@ export const MediaEmbedElement = withHOC(
     );
   }
 );
+

@@ -56,6 +56,8 @@ export function DateElement(props: PlateElementProps<TDateElement>) {
     return trigger;
   }
 
+  const selectedDate = parseCanonicalDateValue(element.date ?? '');
+
   return (
     <PlateElement
       {...props}
@@ -67,9 +69,10 @@ export function DateElement(props: PlateElementProps<TDateElement>) {
     >
       <Popover>
         <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-        <PopoverContent className="w-auto p-0">
+        <PopoverContent className="w-[328px] rounded-lg border-0 bg-[#FCFCFC] p-0 shadow-[0_10px_20px_rgba(3,4,7,0.0625)]">
           <Calendar
-            selected={parseCanonicalDateValue(element.date ?? '')}
+            selected={selectedDate}
+            defaultMonth={selectedDate ?? undefined}
             onSelect={(date) => {
               if (!date) return;
 

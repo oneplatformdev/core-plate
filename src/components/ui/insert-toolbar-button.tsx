@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { usePlateI18n } from '@/i18n/provider';
 import { insertBlock, insertInlineElement } from '@/components/transforms';
+import { focusEditorReliably } from '@/lib/focus-editor';
 
 import { ToolbarButton, ToolbarMenuGroup } from './toolbar';
 import { useToolbarOverflowMenu } from './toolbar-overflow-context';
@@ -121,7 +122,11 @@ export function InsertToolbarButton(props: DropdownMenuProps) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="flex max-h-[60vh] min-w-[240px] flex-col overflow-y-auto"
+        className="flex max-h-[55vh] min-w-[240px] flex-col overflow-y-auto"
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+          focusEditorReliably(editor);
+        }}
         align={inOverflowMenu ? 'end' : 'start'}
         side={inOverflowMenu ? 'left' : 'bottom'}
         style={{ minWidth: 260, width: 260 }}
@@ -134,7 +139,17 @@ export function InsertToolbarButton(props: DropdownMenuProps) {
                 className="min-w-[220px] gap-2 whitespace-nowrap"
                 onSelect={() => {
                   onSelect(editor, value);
-                  if (focusEditor !== false) editor.tf.focus();
+                  if (focusEditor !== false) {
+                    // Three passes:
+                    //  1. sync — for the immediate case (sandbox / no focus trap)
+                    //  2. rAF — after Radix's onCloseAutoFocus runs
+                    //  3. timeout — after DropdownMenuContent fully unmounts
+                    //     and its FocusScope cleanup tries to restore focus
+                    //     to the dropdown trigger.
+                    focusEditorReliably(editor);
+                    requestAnimationFrame(() => focusEditorReliably(editor));
+                    setTimeout(() => focusEditorReliably(editor), 80);
+                  }
                 }}
               >
                 {icon}

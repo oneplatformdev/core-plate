@@ -23,9 +23,11 @@ export type UploadResultLike = {
 export interface FileUploadContextValue<T = UploadResultLike> {
   onUploadFile?: (file: File) => Promise<T>;
   onUploadValidateError?: (error: UploadError) => void;
+  onUploadError?: (error: unknown, file: File) => void;
 }
 
 export const FileUploadContext = React.createContext<FileUploadContextValue>({
   onUploadFile: undefined,
   onUploadValidateError: undefined,
+  onUploadError: undefined,
 });

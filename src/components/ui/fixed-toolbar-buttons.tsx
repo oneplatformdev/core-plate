@@ -234,8 +234,6 @@ export function FixedToolbarButtons() {
     <div ref={containerRef} className="relative flex w-full min-w-0 items-center overflow-hidden">
       {!readOnly && (
         <>
-          <div className="flex min-w-0 items-center overflow-hidden">{renderItems(visibleItems)}</div>
-
           {hasHiddenItems && (
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={false}>
               <DropdownMenuTrigger asChild>
@@ -244,10 +242,10 @@ export function FixedToolbarButtons() {
                 </ToolbarButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="ignore-click-outside/toolbar max-h-[60vh] max-w-[90vw] min-w-1! w-full overflow-y-auto overflow-x-hidden p-1.5"
-                align="end"
+                className="ignore-click-outside/toolbar max-h-[55vh] max-w-[90vw] min-w-1! w-full overflow-y-auto overflow-x-hidden p-1.5"
+                align="start"
                 collisionPadding={8}
-                side="left"
+                side="bottom"
                 sideOffset={6}
               >
                 <ToolbarOverflowContext.Provider value>
@@ -256,6 +254,8 @@ export function FixedToolbarButtons() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+
+          <div className="flex min-w-0 items-center overflow-hidden">{renderItems(visibleItems)}</div>
 
           <div className="grow" />
 

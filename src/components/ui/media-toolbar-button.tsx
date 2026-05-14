@@ -18,15 +18,14 @@ import { toast } from 'sonner';
 import { useFilePicker } from 'use-file-picker';
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { focusEditorReliably } from '@/lib/focus-editor';
 
 import {
   ToolbarSplitButton,
@@ -149,20 +149,15 @@ export function MediaToolbarButton({
         </DropdownMenu>
       </ToolbarSplitButton>
 
-      <AlertDialog
-        open={dialogOpen}
-        onOpenChange={(value) => {
-          setDialogOpen(value);
-        }}
-      >
-        <AlertDialogContent className="gap-6">
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
           <MediaUrlDialogContent
             currentConfig={currentConfig}
             nodeType={nodeType}
             setOpen={setDialogOpen}
           />
-        </AlertDialogContent>
-      </AlertDialog>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -179,35 +174,59 @@ function MediaUrlDialogContent({
   const { t } = usePlateI18n();
   const editor = useEditorRef();
   const [url, setUrl] = React.useState('');
+  const scheduleRestoreFocus = React.useCallback(() => {
+    setTimeout(() => {
+      const activeElement = document.activeElement as HTMLElement | null;
+      const isInteractingWithOverlay = !!activeElement?.closest(
+        '[data-slot="dropdown-menu-content"], [data-slot="dialog-content"], [data-slot="popover-content"]'
+      );
+
+      if (isInteractingWithOverlay) return;
+
+      editor.tf.select(editor.api.end([]));
+      editor.tf.collapse({ edge: 'end' });
+      focusEditorReliably(editor);
+    }, 10);
+  }, [editor]);
+
+  const isDirectVideoFileUrl = React.useCallback((value: string) => {
+    return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?(#.*)?$/i.test(value);
+  }, []);
 
   const embedMedia = React.useCallback(() => {
     if (!isUrl(url)) return toast.error(t('invalidUrl'));
 
     setOpen(false);
+    const resolvedType =
+      nodeType === KEYS.video && !isDirectVideoFileUrl(url)
+        ? KEYS.mediaEmbed
+        : nodeType;
+
     editor.tf.insertNodes({
       children: [{ text: '' }],
-      name: nodeType === KEYS.file ? url.split('/').pop() : undefined,
-      type: nodeType,
+      name: resolvedType === KEYS.file ? url.split('/').pop() : undefined,
+      type: resolvedType,
       url,
     });
-  }, [url, t, setOpen, editor.tf, nodeType]);
+    scheduleRestoreFocus();
+  }, [url, t, setOpen, editor.tf, nodeType, isDirectVideoFileUrl, scheduleRestoreFocus]);
 
   return (
     <>
-      <AlertDialogHeader>
-        <AlertDialogTitle>{t(currentConfig.titleKey)}</AlertDialogTitle>
-      </AlertDialogHeader>
+      <DialogHeader className="flex flex-row items-center justify-between min-h-10">
+        <DialogTitle>{t(currentConfig.titleKey)}</DialogTitle>
+      </DialogHeader>
 
-      <AlertDialogDescription className="group relative w-full">
+      <div className="flex flex-col gap-1">
         <label
-          className="-translate-y-1/2 absolute top-1/2 block cursor-text px-1 text-muted-foreground/70 text-sm transition-all group-focus-within:pointer-events-none group-focus-within:top-0 group-focus-within:cursor-default group-focus-within:font-medium group-focus-within:text-foreground group-focus-within:text-xs has-[+input:not(:placeholder-shown)]:pointer-events-none has-[+input:not(:placeholder-shown)]:top-0 has-[+input:not(:placeholder-shown)]:cursor-default has-[+input:not(:placeholder-shown)]:font-medium has-[+input:not(:placeholder-shown)]:text-foreground has-[+input:not(:placeholder-shown)]:text-xs"
           htmlFor="url"
+          className="font-sans text-[14px] font-medium leading-[125%] text-[#06080D]"
         >
-          <span className="inline-flex bg-background px-2">{t('url')}</span>
+          {t('url')}
         </label>
         <Input
           id="url"
-          className="w-full"
+          className="h-11 w-full rounded-lg border border-[#E8E9EB] bg-[#FCFCFC] px-2 py-1 font-sans text-[16px] font-medium leading-[140%] text-[#06080D] placeholder:text-[#666A78]"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => {
@@ -217,19 +236,27 @@ function MediaUrlDialogContent({
           type="url"
           autoFocus
         />
-      </AlertDialogDescription>
+      </div>
 
-      <AlertDialogFooter>
-        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-        <AlertDialogAction
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button
+            variant="outline"
+            className="h-10 min-h-10 w-[140px] min-w-[140px] rounded-lg border border-[#E1E1E5] bg-[#FCFCFC] px-3 py-2 font-sans text-[16px] font-medium leading-[140%] text-[#06080D] hover:bg-[#FCFCFC]"
+          >
+            {t('cancel')}
+          </Button>
+        </DialogClose>
+        <Button
+          className="h-10 min-h-10 w-[140px] min-w-[140px] rounded-lg bg-[#9368FF] px-3 py-2 font-sans text-[16px] font-medium leading-[140%] text-[#FCFCFC] hover:bg-[#9368FF]/90"
           onClick={(e) => {
             e.preventDefault();
             embedMedia();
           }}
         >
           {t('accept')}
-        </AlertDialogAction>
-      </AlertDialogFooter>
+        </Button>
+      </DialogFooter>
     </>
   );
 }
