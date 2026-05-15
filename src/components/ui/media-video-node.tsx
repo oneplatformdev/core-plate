@@ -48,7 +48,7 @@ export const VideoElement = withHOC(
       isEditorMounted && !isUpload && !isYoutube && isVideo;
     const shouldRenderFileVideo = isEditorMounted && (isUpload || !isVideo);
 
-    const isTweet = true;
+    const isTweet = false;
 
     const { isDragging, handleRef } = useDraggable({
       element: props.element,

@@ -109,6 +109,9 @@ export const PlaceholderElement = withHOC(
       editor.tf.withoutSaving(() => {
         editor.tf.removeNodes({ at: path });
 
+        const isResizableMedia =
+          element.mediaType === KEYS.img || element.mediaType === KEYS.video;
+
         const node = {
           children: [{ text: '' }],
           initialHeight: imageRef.current?.height,
@@ -118,6 +121,7 @@ export const PlaceholderElement = withHOC(
           placeholderId: element.id as string,
           type: element.mediaType!,
           url: uploadedFile.url,
+          ...(isResizableMedia ? { width: 400 } : {}),
         };
 
         editor.tf.insertNodes(node, { at: path });
