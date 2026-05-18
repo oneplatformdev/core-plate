@@ -202,11 +202,17 @@ function MediaUrlDialogContent({
         ? KEYS.mediaEmbed
         : nodeType;
 
+    const isResizable =
+      resolvedType === KEYS.img ||
+      resolvedType === KEYS.video ||
+      resolvedType === KEYS.mediaEmbed;
+
     editor.tf.insertNodes({
       children: [{ text: '' }],
       name: resolvedType === KEYS.file ? url.split('/').pop() : undefined,
       type: resolvedType,
       url,
+      ...(isResizable ? { width: 400 } : {}),
     });
     scheduleRestoreFocus();
   }, [url, t, setOpen, editor.tf, nodeType, isDirectVideoFileUrl, scheduleRestoreFocus]);
