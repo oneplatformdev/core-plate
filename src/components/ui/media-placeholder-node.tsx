@@ -242,7 +242,10 @@ export function ImageProgress({
   }
 
   return (
-    <div className={cn('relative', className)} contentEditable={false}>
+    <div
+      className={cn('relative mx-auto w-fit max-w-[400px]', className)}
+      contentEditable={false}
+    >
       <img
         ref={imageRef}
         className="h-auto w-full max-w-[400px] rounded-sm object-cover"
