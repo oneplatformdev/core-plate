@@ -94,7 +94,13 @@ export function useUploadFile({
         );
       }
 
-      const uploaded = await uploadWithConsumer(file);
+      const uploaded = await uploadWithConsumer(file, {
+        onProgress: (percent) => {
+          if (typeof percent === 'number' && !Number.isNaN(percent)) {
+            setProgress(Math.max(0, Math.min(100, percent)));
+          }
+        },
+      });
       const normalized = normalizeUploadedFile(
         file,
         (uploaded ?? {}) as UploadResultLike

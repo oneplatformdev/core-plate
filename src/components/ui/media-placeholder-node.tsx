@@ -109,6 +109,9 @@ export const PlaceholderElement = withHOC(
       editor.tf.withoutSaving(() => {
         editor.tf.removeNodes({ at: path });
 
+        const isResizableMedia =
+          element.mediaType === KEYS.img || element.mediaType === KEYS.video;
+
         const node = {
           children: [{ text: '' }],
           initialHeight: imageRef.current?.height,
@@ -118,6 +121,7 @@ export const PlaceholderElement = withHOC(
           placeholderId: element.id as string,
           type: element.mediaType!,
           url: uploadedFile.url,
+          ...(isResizableMedia ? { width: 400 } : {}),
         };
 
         editor.tf.insertNodes(node, { at: path });
@@ -189,7 +193,7 @@ export const PlaceholderElement = withHOC(
                   <div>–</div>
                   <div className="flex items-center">
                     <Loader2Icon className="mr-1 size-3.5 animate-spin text-muted-foreground" />
-                    {progress ?? 0}%
+                    {Math.round(progress ?? 0)}%
                   </div>
                 </div>
               )}
@@ -238,10 +242,13 @@ export function ImageProgress({
   }
 
   return (
-    <div className={cn('relative', className)} contentEditable={false}>
+    <div
+      className={cn('relative mx-auto w-fit max-w-[400px]', className)}
+      contentEditable={false}
+    >
       <img
         ref={imageRef}
-        className="h-auto w-full rounded-sm object-cover"
+        className="h-auto w-full max-w-[400px] rounded-sm object-cover"
         alt={file.name}
         src={objectUrl}
       />

@@ -20,8 +20,13 @@ export type UploadResultLike = {
   url?: string;
 };
 
+export interface UploadOptions {
+  onProgress?: (percent: number) => void;
+  signal?: AbortSignal;
+}
+
 export interface FileUploadContextValue<T = UploadResultLike> {
-  onUploadFile?: (file: File) => Promise<T>;
+  onUploadFile?: (file: File, options?: UploadOptions) => Promise<T>;
   onUploadValidateError?: (error: UploadError) => void;
   onUploadError?: (error: unknown, file: File) => void;
 }

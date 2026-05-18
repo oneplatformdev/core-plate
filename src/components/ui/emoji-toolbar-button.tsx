@@ -67,8 +67,8 @@ export function EmojiToolbarButton({
       }
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      side={inOverflowMenu ? 'right' : 'bottom'}
-      align={inOverflowMenu ? 'start' : 'center'}
+      side={inOverflowMenu ? 'left' : 'bottom'}
+      align={inOverflowMenu ? 'start' : 'end'}
     >
       <EmojiPicker
         {...emojiPickerState}
@@ -101,7 +101,14 @@ export function EmojiPopover({
       <Popover.Trigger asChild>{control}</Popover.Trigger>
 
       <Popover.Portal>
-        <Popover.Content align={align} className="op-plate-scope z-100" side={side} sideOffset={8}>
+        <Popover.Content
+          align={align}
+          className="op-plate-scope z-100"
+          side={side}
+          sideOffset={8}
+          collisionPadding={8}
+          avoidCollisions
+        >
           {children}
         </Popover.Content>
       </Popover.Portal>
