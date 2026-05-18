@@ -245,7 +245,7 @@ export function ImageProgress({
     <div className={cn('relative', className)} contentEditable={false}>
       <img
         ref={imageRef}
-        className="h-auto w-full rounded-sm object-cover"
+        className="h-auto w-full max-w-[400px] rounded-sm object-cover"
         alt={file.name}
         src={objectUrl}
       />

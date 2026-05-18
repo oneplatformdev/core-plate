@@ -9,5 +9,5 @@ export { FixedToolbar } from '@/components/ui/fixed-toolbar';
 export { FixedToolbarButtons } from '@/components/ui/fixed-toolbar-buttons';
 export { defaultPlateMessages, ukPlateMessages, type PlateMessageKey, type PlateMessages } from '@/i18n/messages';
 export { PlateI18nProvider, usePlateI18n } from '@/i18n/provider';
-export { FileUploadContext, type FileUploadContextValue, type UploadResultLike } from '@/context/file-upload-context';
+export { FileUploadContext, type FileUploadContextValue, type UploadOptions, type UploadResultLike } from '@/context/file-upload-context';
 export { UploadErrorCode, type UploadError } from '@platejs/media/react';
