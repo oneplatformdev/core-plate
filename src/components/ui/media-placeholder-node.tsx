@@ -193,7 +193,7 @@ export const PlaceholderElement = withHOC(
                   <div>–</div>
                   <div className="flex items-center">
                     <Loader2Icon className="mr-1 size-3.5 animate-spin text-muted-foreground" />
-                    {progress ?? 0}%
+                    {Math.round(progress ?? 0)}%
                   </div>
                 </div>
               )}
