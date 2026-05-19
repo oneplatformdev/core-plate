@@ -102,7 +102,7 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
   key: 'googleDocsPaste',
   handlers: {
     onPaste: ({ editor, event }) => {
-      const data = (event as ClipboardEvent).clipboardData;
+      const data = (event as unknown as ClipboardEvent).clipboardData;
       if (!data) return;
 
       const html = data.getData('text/html');
@@ -132,7 +132,9 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
           if (!file) continue;
 
           const before = collectPlaceholderIds(editor);
-          editor.getTransforms(PlaceholderPlugin).insert.media([file]);
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          editor.getTransforms(PlaceholderPlugin).insert.media(dt.files);
           const after = collectPlaceholderIds(editor);
           const newId = [...after].find((id) => !before.has(id));
           if (newId) await waitForPlaceholderRemoved(editor, newId);
