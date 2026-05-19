@@ -18,6 +18,7 @@ import { EmojiKit } from '@/components/emoji-kit';
 import { ExitBreakKit } from '@/components/exit-break-kit';
 import { FixedToolbarKit } from '@/components/fixed-toolbar-kit';
 import { FontKit } from '@/components/font-kit';
+import { GoogleDocsPasteKit } from '@/components/google-docs-paste-kit';
 import { LineHeightKit } from '@/components/line-height-kit';
 import { LinkKit } from '@/components/link-kit';
 import { ListKit } from '@/components/list-kit';
@@ -39,6 +40,7 @@ export const createEditorKit = (placeholder?: string) => [
   ...ToggleKit,
   ...TocKit,
   ...MediaKit,
+  ...GoogleDocsPasteKit,
   ...CalloutKit,
   ...ColumnKit,
   ...MathKit,

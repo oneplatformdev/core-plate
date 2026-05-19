@@ -11,6 +11,30 @@ import { FixedToolbarButtons } from '@/components/ui/fixed-toolbar-buttons';
 import { defaultPlateMessages, ukPlateMessages } from '@/i18n/messages';
 import { PlateI18nProvider } from '@/i18n/provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { FileUploadContext, type UploadResultLike, type UploadOptions } from '@/context/file-upload-context';
+
+// Sandbox-only fake uploader: returns a local object URL so paste-from-google-docs
+// and toolbar uploads render without a real backend.
+const fakeUploadFile = async (
+  file: File,
+  options?: UploadOptions
+): Promise<UploadResultLike> => {
+  const url = URL.createObjectURL(file);
+  const steps = [10, 35, 65, 90, 100];
+  for (const p of steps) {
+    await new Promise((r) => setTimeout(r, 120));
+    options?.onProgress?.(p);
+  }
+  return {
+    url,
+    appUrl: url,
+    originalUrl: url,
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    key: `sandbox-${Date.now()}-${file.name}`,
+  };
+};
 
 type FeedSplitEditorProps = {
   value: Value;
@@ -37,6 +61,7 @@ export function FeedSplitEditor({ value, onChangeValues }: FeedSplitEditorProps)
   return (
     <PlateI18nProvider locale="uk" messages={messages}>
       <TooltipProvider delayDuration={0}>
+        <FileUploadContext.Provider value={{ onUploadFile: fakeUploadFile }}>
         <DndProvider backend={HTML5Backend}>
           <Plate
             editor={editor}
@@ -56,6 +81,7 @@ export function FeedSplitEditor({ value, onChangeValues }: FeedSplitEditorProps)
             </div>
           </Plate>
         </DndProvider>
+        </FileUploadContext.Provider>
       </TooltipProvider>
     </PlateI18nProvider>
   );
