@@ -1,8 +1,150 @@
 'use client';
 
+import * as React from 'react';
+import { createPortal } from 'react-dom';
+
 import { PlaceholderPlugin } from '@platejs/media/react';
 import { KEYS } from 'platejs';
 import { createPlatePlugin } from 'platejs/react';
+
+import { usePlateI18n } from '@/i18n/provider';
+
+type QueueState = { total: number; done: number; failed: number; active: boolean };
+const initialQueueState: QueueState = { total: 0, done: 0, failed: 0, active: false };
+let queueState: QueueState = initialQueueState;
+const queueListeners = new Set<(s: QueueState) => void>();
+const setQueueState = (next: Partial<QueueState>) => {
+  queueState = { ...queueState, ...next };
+  queueListeners.forEach((l) => l(queueState));
+};
+const subscribeQueue = (l: (s: QueueState) => void) => {
+  queueListeners.add(l);
+  return () => {
+    queueListeners.delete(l);
+  };
+};
+
+function PasteUploadOverlay() {
+  const [state, setState] = React.useState<QueueState>(queueState);
+  const { t } = usePlateI18n();
+
+  React.useEffect(() => subscribeQueue(setState), []);
+
+  if (!state.active || typeof document === 'undefined') return null;
+
+  const handled = state.done + state.failed;
+  const total = Math.max(state.total, 1);
+  const ratio = Math.min(1, handled / total);
+  const percent = Math.round(ratio * 100);
+
+  // Ring geometry: bigger loader living inside the left tile of the card.
+  const size = 32;
+  const stroke = 3.5;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+
+  const failedText = state.failed > 0
+    ? t('pasteUploadingFailed').replace('{{failed}}', String(state.failed))
+    : null;
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        bottom: 24,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        padding: 8,
+        paddingRight: 20,
+        background: '#FFFFFF',
+        borderRadius: 16,
+        boxShadow: '0 10px 30px rgba(15, 23, 42, 0.14)',
+        fontFamily: "'Manrope', sans-serif",
+        color: '#06080D',
+        pointerEvents: 'none',
+        minWidth: 260,
+      }}
+      role="status"
+      aria-live="polite"
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 64,
+          height: 64,
+          flex: 'none',
+          background: 'rgba(147, 104, 255, 0.10)',
+          borderRadius: 12,
+        }}
+      >
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="rgba(147, 104, 255, 0.22)"
+            strokeWidth={stroke}
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={state.failed > 0 ? '#F59E0B' : '#9368FF'}
+            strokeWidth={stroke}
+            strokeDasharray={c}
+            strokeDashoffset={c * (1 - ratio)}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            style={{ transition: 'stroke-dashoffset 200ms ease, stroke 200ms ease' }}
+          />
+        </svg>
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          gap: 4,
+          minWidth: 0,
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 700,
+            fontSize: 16,
+            lineHeight: '125%',
+            color: '#06080D',
+          }}
+        >
+          {`${handled} / ${state.total}`}
+        </div>
+        <div
+          style={{
+            fontWeight: 500,
+            fontSize: 13,
+            lineHeight: '125%',
+            color: '#6B7280',
+          }}
+        >
+          {t('pasteUploadingFiles')}
+          {failedText && (
+            <span style={{ color: '#B45309', marginLeft: 6 }}>{` · ${failedText}`}</span>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 const dataUrlToFile = async (
   dataUrl: string,
@@ -137,6 +279,9 @@ const waitForPlaceholderRemoved = (
 
 export const GoogleDocsPastePlugin = createPlatePlugin({
   key: 'googleDocsPaste',
+  render: {
+    afterEditable: () => <PasteUploadOverlay />,
+  },
   handlers: {
     onPaste: ({ editor, event }) => {
       const data = (event as unknown as ClipboardEvent).clipboardData;
@@ -161,31 +306,43 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
       }
 
       void (async () => {
-        for (let i = 0; i < srcs.length; i += 1) {
-          const src = srcs[i];
-          const name = extractFilenameFromSrc(src, i + 1);
-          const file = src.startsWith('data:')
-            ? await dataUrlToFile(src, name)
-            : await urlToFile(src, name);
+        setQueueState({
+          total: srcs.length,
+          done: 0,
+          failed: 0,
+          active: true,
+        });
+        try {
+          for (let i = 0; i < srcs.length; i += 1) {
+            const src = srcs[i];
+            const name = extractFilenameFromSrc(src, i + 1);
+            const file = src.startsWith('data:')
+              ? await dataUrlToFile(src, name)
+              : await urlToFile(src, name);
 
-          const range = findMarkerRange(editor, i);
-          if (!range) continue;
+            const range = findMarkerRange(editor, i);
+            if (range) {
+              editor.tf.select(range);
+              editor.tf.delete();
+            }
 
-          // Position caret at the marker and remove the marker text. If we
-          // failed to fetch the file, just drop the marker so it doesn't stay
-          // as garbage in the document.
-          editor.tf.select(range);
-          editor.tf.delete();
+            if (!file) {
+              setQueueState({ failed: queueState.failed + 1 });
+              continue;
+            }
 
-          if (!file) continue;
-
-          const before = collectPlaceholderIds(editor);
-          const dt = new DataTransfer();
-          dt.items.add(file);
-          editor.getTransforms(PlaceholderPlugin).insert.media(dt.files);
-          const after = collectPlaceholderIds(editor);
-          const newId = [...after].find((id) => !before.has(id));
-          if (newId) await waitForPlaceholderRemoved(editor, newId);
+            const before = collectPlaceholderIds(editor);
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            editor.getTransforms(PlaceholderPlugin).insert.media(dt.files);
+            const after = collectPlaceholderIds(editor);
+            const newId = [...after].find((id) => !before.has(id));
+            if (newId) await waitForPlaceholderRemoved(editor, newId);
+            setQueueState({ done: queueState.done + 1 });
+          }
+        } finally {
+          // Brief hold so the user sees the full ring before it disappears.
+          setTimeout(() => setQueueState({ active: false }), 600);
         }
       })();
 

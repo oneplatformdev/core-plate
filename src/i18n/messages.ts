@@ -143,6 +143,8 @@ export const defaultPlateMessages = {
   lowerRomanList: 'Lower Roman (i, ii, iii)',
   upperRomanList: 'Upper Roman (I, II, III)',
   typeSomethingPlaceholder: 'Type something...',
+  pasteUploadingFiles: 'Uploading files, please wait',
+  pasteUploadingFailed: '{{failed}} failed',
 } as const;
 
 export type PlateMessageKey = keyof typeof defaultPlateMessages;
@@ -293,6 +295,8 @@ export const ukPlateMessages: Record<PlateMessageKey, string> = {
   pasteEmbedLink: 'Вставте посилання для вбудовування...',
   caption: 'Підпис',
   writeCaption: 'Додайте підпис...',
+  pasteUploadingFiles: 'Відбувається завантаження файлів, зачекайте будь ласка',
+  pasteUploadingFailed: '{{failed}} з помилкою',
 };
 
 
