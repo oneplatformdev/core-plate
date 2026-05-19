@@ -125,7 +125,7 @@ export const PlaceholderElement = withHOC(
           placeholderId: element.id as string,
           type: element.mediaType!,
           url: uploadedFile.url,
-          ...(isResizableMedia ? { width: 400 } : {}),
+          ...(isResizableMedia ? { width: 'calc(100% - 80px)' } : {}),
         };
 
         editor.tf.insertNodes(node, { at: path });
@@ -234,7 +234,7 @@ function ImageSkeleton({
 }) {
   return (
     <div
-      className="relative mx-auto w-full max-w-[400px]"
+      className="relative mx-auto w-[calc(100%-80px)]"
       contentEditable={false}
       style={{
         aspectRatio: hint ? `${hint.width} / ${hint.height}` : undefined,
@@ -294,7 +294,7 @@ export function ImageProgress({
 
   return (
     <div
-      className={cn('relative mx-auto w-full max-w-[400px]', className)}
+      className={cn('relative mx-auto w-[calc(100%-80px)]', className)}
       contentEditable={false}
       style={{
         aspectRatio: aspect,

@@ -212,7 +212,7 @@ function MediaUrlDialogContent({
       name: resolvedType === KEYS.file ? url.split('/').pop() : undefined,
       type: resolvedType,
       url,
-      ...(isResizable ? { width: 400 } : {}),
+      ...(isResizable ? { width: 'calc(100% - 80px)' } : {}),
     });
     scheduleRestoreFocus();
   }, [url, t, setOpen, editor.tf, nodeType, isDirectVideoFileUrl, scheduleRestoreFocus]);
