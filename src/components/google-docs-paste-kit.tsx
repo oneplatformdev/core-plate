@@ -9,6 +9,7 @@ import { createPlatePlugin } from 'platejs/react';
 
 import { usePlateI18n } from '@/i18n/provider';
 import { measureImageFile, pasteImageHints } from '@/lib/paste-image-hints';
+import { pasteAbortControllers } from '@/lib/paste-abort';
 
 type QueueState = {
   total: number;
@@ -17,6 +18,7 @@ type QueueState = {
   active: boolean;
   completed: boolean;
   exiting: boolean;
+  cancelled: boolean;
 };
 const initialQueueState: QueueState = {
   total: 0,
@@ -25,6 +27,18 @@ const initialQueueState: QueueState = {
   active: false,
   completed: false,
   exiting: false,
+  cancelled: false,
+};
+
+// Module-level cancel flag the paste loop polls between iterations.
+let cancelRequested = false;
+let currentAbortController: AbortController | null = null;
+
+const cancelPasteQueue = () => {
+  cancelRequested = true;
+  currentAbortController?.abort();
+  pasteAbortControllers.abortAll();
+  setQueueState({ cancelled: true });
 };
 let queueState: QueueState = initialQueueState;
 const queueListeners = new Set<(s: QueueState) => void>();
@@ -211,6 +225,30 @@ function PasteUploadOverlay() {
           )}
         </div>
       </div>
+      {!state.completed && !state.exiting && (
+        <button
+          type="button"
+          onClick={cancelPasteQueue}
+          disabled={state.cancelled}
+          style={{
+            marginLeft: 6,
+            padding: '6px 12px',
+            border: 'none',
+            borderRadius: 10,
+            background: state.cancelled ? '#E5E7EB' : '#F3F4F6',
+            color: state.cancelled ? '#9CA3AF' : '#06080D',
+            fontFamily: "'Manrope', sans-serif",
+            fontWeight: 600,
+            fontSize: 13,
+            lineHeight: '125%',
+            cursor: state.cancelled ? 'default' : 'pointer',
+            pointerEvents: 'auto',
+            transition: 'background 160ms ease',
+          }}
+        >
+          {t('cancel')}
+        </button>
+      )}
     </div>
     </>,
     document.body
@@ -426,6 +464,7 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
       }
 
       void (async () => {
+        cancelRequested = false;
         setQueueState({
           total: srcs.length,
           done: 0,
@@ -433,14 +472,19 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
           active: true,
           completed: false,
           exiting: false,
+          cancelled: false,
         });
         try {
           for (let i = 0; i < srcs.length; i += 1) {
+            if (cancelRequested) break;
+
             const src = srcs[i];
             const name = extractFilenameFromSrc(src, i + 1);
             const file = src.startsWith('data:')
               ? await dataUrlToFile(src, name)
               : await urlToFile(src, name);
+
+            if (cancelRequested) break;
 
             const range = findMarkerRange(editor, i);
             if (range) {
@@ -457,6 +501,7 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
             // ratio from the very first paint — keeps the editor from
             // scroll-jumping as each image loads.
             const dims = await measureImageFile(file);
+            if (cancelRequested) break;
 
             const before = collectPlaceholderIds(editor);
             const dt = new DataTransfer();
@@ -464,29 +509,74 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
             editor.getTransforms(PlaceholderPlugin).insert.media(dt.files);
             const after = collectPlaceholderIds(editor);
             const newId = [...after].find((id) => !before.has(id));
+
             if (newId && dims) pasteImageHints.set(newId, dims);
+
+            // Hook an AbortController to this placeholder. PlaceholderElement
+            // reads it via pasteAbortControllers.get(id) and passes the signal
+            // through to the consumer's onUploadFile(file, { signal }).
+            const controller = new AbortController();
+            currentAbortController = controller;
+            if (newId) pasteAbortControllers.set(newId, controller);
+
             if (newId) await waitForPlaceholderRemoved(editor, newId);
-            if (newId) pasteImageHints.delete(newId);
+
+            if (newId) {
+              pasteImageHints.delete(newId);
+              pasteAbortControllers.delete(newId);
+            }
+            currentAbortController = null;
+
+            if (cancelRequested) break;
             setQueueState({ done: queueState.done + 1 });
           }
         } finally {
-          // 1) Switch loader to a green check, hold briefly so the user
-          //    registers completion. 2) Trigger fade-out via opacity/transform
-          //    transition. 3) Reset state once the transition has played.
-          setQueueState({ completed: true });
-          setTimeout(() => {
+          // If we were cancelled, sweep any leftover PUA markers out of the
+          // document so the user isn't left with garbage text where the
+          // un-uploaded images would have gone.
+          if (cancelRequested) {
+            for (let i = 0; i < srcs.length; i += 1) {
+              const range = findMarkerRange(editor, i);
+              if (!range) continue;
+              editor.tf.select(range);
+              editor.tf.delete();
+            }
+          }
+
+          if (cancelRequested) {
+            // Skip the green check on cancel — just fade out.
             setQueueState({ exiting: true });
             setTimeout(() => {
               setQueueState({
                 active: false,
                 exiting: false,
                 completed: false,
+                cancelled: false,
                 total: 0,
                 done: 0,
                 failed: 0,
               });
+              cancelRequested = false;
             }, 360);
-          }, 900);
+          } else {
+            // 1) Switch loader to a green check, hold briefly so the user
+            //    registers completion. 2) Trigger fade-out. 3) Reset state.
+            setQueueState({ completed: true });
+            setTimeout(() => {
+              setQueueState({ exiting: true });
+              setTimeout(() => {
+                setQueueState({
+                  active: false,
+                  exiting: false,
+                  completed: false,
+                  cancelled: false,
+                  total: 0,
+                  done: 0,
+                  failed: 0,
+                });
+              }, 360);
+            }, 900);
+          }
         }
       })();
 

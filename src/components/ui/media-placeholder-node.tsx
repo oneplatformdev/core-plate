@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { focusEditorReliably } from '@/lib/focus-editor';
 import { useUploadFile } from '@/hooks/use-upload-file';
 import { pasteImageHints } from '@/lib/paste-image-hints';
+import { pasteAbortControllers } from '@/lib/paste-abort';
 
 const CONTENT: Record<
   string,
@@ -86,9 +87,11 @@ export const PlaceholderElement = withHOC(
     const replaceCurrentPlaceholder = React.useCallback(
       (file: File) => {
         api.placeholder.addUploadingFile(element.id as string, file);
-        uploadFile(file).catch(() => {
+        const controller = pasteAbortControllers.get(element.id as string);
+        uploadFile(file, { signal: controller?.signal }).catch(() => {
           // Error already surfaced via onUploadError. Tear down placeholder
-          // so the editor doesn't show a stuck "uploading" indicator.
+          // so the editor doesn't show a stuck "uploading" indicator. Same
+          // path for aborted uploads — the cancelled image just disappears.
           api.placeholder.removeUploadingFile(element.id as string);
           const path = editor.api.findPath(element);
           if (path) {
