@@ -170,9 +170,13 @@ export const PlaceholderElement = withHOC(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isReplaced]);
 
+    const imageHint = isImage
+      ? pasteImageHints.get(element.id as string)
+      : undefined;
+
     return (
       <PlateElement className="my-1" {...props}>
-        {(!loading || !isImage) && (
+        {!isImage && (
           <div
             className={cn(
               'flex cursor-pointer select-none items-center rounded-sm bg-muted p-3 pr-9 hover:bg-primary/10'
@@ -188,7 +192,7 @@ export const PlaceholderElement = withHOC(
                 {loading ? uploadingFile?.name : currentContent.content}
               </div>
 
-              {loading && !isImage && (
+              {loading && (
                 <div className="mt-1 flex items-center gap-1.5">
                   <div>{formatBytes(uploadingFile?.size ?? 0)}</div>
                   <div>–</div>
@@ -202,20 +206,43 @@ export const PlaceholderElement = withHOC(
           </div>
         )}
 
-        {isImage && loading && (
-          <ImageProgress
-            file={uploadingFile}
-            imageRef={imageRef}
-            progress={progress}
-            placeholderId={element.id as string}
-          />
-        )}
+        {isImage &&
+          (loading && uploadingFile ? (
+            <ImageProgress
+              file={uploadingFile}
+              imageRef={imageRef}
+              progress={progress}
+              placeholderId={element.id as string}
+            />
+          ) : (
+            <ImageSkeleton hint={imageHint} />
+          ))}
 
         {props.children}
       </PlateElement>
     );
   }
 );
+
+function ImageSkeleton({
+  hint,
+}: {
+  hint?: { width: number; height: number };
+}) {
+  return (
+    <div
+      className="relative mx-auto w-full max-w-[400px]"
+      contentEditable={false}
+      style={{
+        aspectRatio: hint ? `${hint.width} / ${hint.height}` : undefined,
+        minHeight: hint ? undefined : 160,
+      }}
+      aria-hidden
+    >
+      <div className="absolute inset-0 animate-pulse rounded-sm bg-muted" />
+    </div>
+  );
+}
 
 export function ImageProgress({
   className,
@@ -285,14 +312,6 @@ export function ImageProgress({
         className="absolute inset-0 animate-pulse rounded-sm bg-muted"
         aria-hidden
       />
-      {progress < 100 && (
-        <div className="absolute right-1 bottom-1 flex items-center space-x-2 rounded-full bg-black/50 px-1 py-0.5">
-          <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />
-          <span className="font-medium text-white text-xs">
-            {Math.round(progress)}%
-          </span>
-        </div>
-      )}
     </div>
   );
 }
