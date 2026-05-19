@@ -8,6 +8,7 @@ import { KEYS } from 'platejs';
 import { createPlatePlugin } from 'platejs/react';
 
 import { usePlateI18n } from '@/i18n/provider';
+import { measureImageFile, pasteImageHints } from '@/lib/paste-image-hints';
 
 type QueueState = {
   total: number;
@@ -347,13 +348,62 @@ const waitForPlaceholderRemoved = (
     tick();
   });
 
+function EditorBlockingOverlay() {
+  const [state, setState] = React.useState<QueueState>(queueState);
+
+  React.useEffect(() => subscribeQueue(setState), []);
+
+  if (!state.active) return null;
+
+  // Once the queue has finished (completed) we let pointer events through
+  // again — the fade-out is purely cosmetic and shouldn't block typing.
+  const blocking = !state.completed;
+
+  return (
+    <div
+      aria-hidden
+      onMouseDownCapture={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onClickCapture={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'rgba(255, 255, 255, 0.45)',
+        backdropFilter: 'blur(2px)',
+        WebkitBackdropFilter: 'blur(2px)',
+        cursor: 'progress',
+        zIndex: 40,
+        opacity: state.exiting ? 0 : 1,
+        transition: 'opacity 320ms ease',
+        pointerEvents: blocking ? 'auto' : 'none',
+      }}
+    />
+  );
+}
+
 export const GoogleDocsPastePlugin = createPlatePlugin({
   key: 'googleDocsPaste',
   render: {
-    afterEditable: () => <PasteUploadOverlay />,
+    afterEditable: () => (
+      <>
+        <EditorBlockingOverlay />
+        <PasteUploadOverlay />
+      </>
+    ),
   },
   handlers: {
     onPaste: ({ editor, event }) => {
+      // While a queue is running, swallow further paste attempts entirely.
+      if (queueState.active) {
+        event.preventDefault();
+        return true;
+      }
+
       const data = (event as unknown as ClipboardEvent).clipboardData;
       if (!data) return;
 
@@ -403,13 +453,20 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
               continue;
             }
 
+            // Pre-measure so the skeleton box can reserve the right aspect
+            // ratio from the very first paint — keeps the editor from
+            // scroll-jumping as each image loads.
+            const dims = await measureImageFile(file);
+
             const before = collectPlaceholderIds(editor);
             const dt = new DataTransfer();
             dt.items.add(file);
             editor.getTransforms(PlaceholderPlugin).insert.media(dt.files);
             const after = collectPlaceholderIds(editor);
             const newId = [...after].find((id) => !before.has(id));
+            if (newId && dims) pasteImageHints.set(newId, dims);
             if (newId) await waitForPlaceholderRemoved(editor, newId);
+            if (newId) pasteImageHints.delete(newId);
             setQueueState({ done: queueState.done + 1 });
           }
         } finally {

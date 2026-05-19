@@ -18,6 +18,7 @@ import { useFilePicker } from 'use-file-picker';
 import { cn } from '@/lib/utils';
 import { focusEditorReliably } from '@/lib/focus-editor';
 import { useUploadFile } from '@/hooks/use-upload-file';
+import { pasteImageHints } from '@/lib/paste-image-hints';
 
 const CONTENT: Record<
   string,
@@ -206,6 +207,7 @@ export const PlaceholderElement = withHOC(
             file={uploadingFile}
             imageRef={imageRef}
             progress={progress}
+            placeholderId={element.id as string}
           />
         )}
 
@@ -220,22 +222,41 @@ export function ImageProgress({
   file,
   imageRef,
   progress = 0,
+  placeholderId,
 }: {
   file: File;
   className?: string;
   imageRef?: React.RefObject<HTMLImageElement | null>;
   progress?: number;
+  placeholderId?: string;
 }) {
   const [objectUrl, setObjectUrl] = React.useState<string | null>(null);
+  const [aspect, setAspect] = React.useState<string | undefined>(() => {
+    if (!placeholderId) return undefined;
+    const hint = pasteImageHints.get(placeholderId);
+    return hint ? `${hint.width} / ${hint.height}` : undefined;
+  });
 
   React.useEffect(() => {
     const url = URL.createObjectURL(file);
     setObjectUrl(url);
 
+    // If we don't already have a hint from the paste flow, probe the file's
+    // natural dimensions ourselves so the skeleton box still reserves space.
+    if (!aspect) {
+      const probe = new Image();
+      probe.onload = () => {
+        if (probe.naturalWidth && probe.naturalHeight) {
+          setAspect(`${probe.naturalWidth} / ${probe.naturalHeight}`);
+        }
+      };
+      probe.src = url;
+    }
+
     return () => {
       URL.revokeObjectURL(url);
     };
-  }, [file]);
+  }, [file, aspect]);
 
   if (!objectUrl) {
     return null;
@@ -243,14 +264,26 @@ export function ImageProgress({
 
   return (
     <div
-      className={cn('relative mx-auto w-fit max-w-[400px]', className)}
+      className={cn('relative mx-auto w-full max-w-[400px]', className)}
       contentEditable={false}
+      style={{
+        aspectRatio: aspect,
+        minHeight: aspect ? undefined : 120,
+      }}
     >
+      {/* Hidden img keeps imageRef.width/height in sync with the reserved box,
+          so the eventual media node inherits the same dimensions and there is
+          no swap-time layout shift. */}
       <img
         ref={imageRef}
-        className="h-auto w-full max-w-[400px] rounded-sm object-cover"
+        className="absolute inset-0 h-full w-full rounded-sm object-cover opacity-0"
         alt={file.name}
         src={objectUrl}
+        aria-hidden
+      />
+      <div
+        className="absolute inset-0 animate-pulse rounded-sm bg-muted"
+        aria-hidden
       />
       {progress < 100 && (
         <div className="absolute right-1 bottom-1 flex items-center space-x-2 rounded-full bg-black/50 px-1 py-0.5">
