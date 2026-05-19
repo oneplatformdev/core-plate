@@ -9,8 +9,22 @@ import { createPlatePlugin } from 'platejs/react';
 
 import { usePlateI18n } from '@/i18n/provider';
 
-type QueueState = { total: number; done: number; failed: number; active: boolean };
-const initialQueueState: QueueState = { total: 0, done: 0, failed: 0, active: false };
+type QueueState = {
+  total: number;
+  done: number;
+  failed: number;
+  active: boolean;
+  completed: boolean;
+  exiting: boolean;
+};
+const initialQueueState: QueueState = {
+  total: 0,
+  done: 0,
+  failed: 0,
+  active: false,
+  completed: false,
+  exiting: false,
+};
 let queueState: QueueState = initialQueueState;
 const queueListeners = new Set<(s: QueueState) => void>();
 const setQueueState = (next: Partial<QueueState>) => {
@@ -47,67 +61,122 @@ function PasteUploadOverlay() {
     ? t('pasteUploadingFailed').replace('{{failed}}', String(state.failed))
     : null;
 
+  const isDone = state.completed;
+  const tileBg = isDone ? 'rgba(76, 175, 80, 0.12)' : 'rgba(147, 104, 255, 0.10)';
+
   return createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 24,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 14,
-        padding: 8,
-        paddingRight: 20,
-        background: '#FFFFFF',
-        borderRadius: 16,
-        boxShadow: '0 10px 30px rgba(15, 23, 42, 0.14)',
-        fontFamily: "'Manrope', sans-serif",
-        color: '#06080D',
-        pointerEvents: 'none',
-        minWidth: 260,
-      }}
-      role="status"
-      aria-live="polite"
-    >
+    <>
+      <style>{`
+        @keyframes coreplate-check-pop {
+          0% { transform: scale(0.6); opacity: 0; }
+          60% { transform: scale(1.08); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes coreplate-check-draw {
+          from { stroke-dashoffset: 24; }
+          to { stroke-dashoffset: 0; }
+        }
+      `}</style>
       <div
         style={{
+          position: 'fixed',
+          bottom: 24,
+          left: '50%',
+          transform: state.exiting
+            ? 'translateX(-50%) translateY(12px)'
+            : 'translateX(-50%) translateY(0)',
+          opacity: state.exiting ? 0 : 1,
+          transition: 'opacity 320ms ease, transform 320ms ease',
+          zIndex: 9999,
           display: 'flex',
+          flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'center',
-          width: 64,
-          height: 64,
-          flex: 'none',
-          background: 'rgba(147, 104, 255, 0.10)',
-          borderRadius: 12,
+          gap: 14,
+          padding: 8,
+          paddingRight: 20,
+          background: '#FFFFFF',
+          borderRadius: 16,
+          boxShadow: '0 10px 30px rgba(15, 23, 42, 0.14)',
+          fontFamily: "'Manrope', sans-serif",
+          color: '#06080D',
+          pointerEvents: 'none',
+          minWidth: 260,
         }}
+        role="status"
+        aria-live="polite"
       >
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke="rgba(147, 104, 255, 0.22)"
-            strokeWidth={stroke}
-          />
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke={state.failed > 0 ? '#F59E0B' : '#9368FF'}
-            strokeWidth={stroke}
-            strokeDasharray={c}
-            strokeDashoffset={c * (1 - ratio)}
-            strokeLinecap="round"
-            transform={`rotate(-90 ${size / 2} ${size / 2})`}
-            style={{ transition: 'stroke-dashoffset 200ms ease, stroke 200ms ease' }}
-          />
-        </svg>
-      </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 64,
+            height: 64,
+            flex: 'none',
+            background: tileBg,
+            borderRadius: 12,
+            transition: 'background 240ms ease',
+          }}
+        >
+          {isDone ? (
+            <svg
+              width={size}
+              height={size}
+              viewBox={`0 0 ${size} ${size}`}
+              style={{
+                animation: 'coreplate-check-pop 320ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+              }}
+            >
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={r + 0.5}
+                fill="#4CAF50"
+              />
+              <path
+                d="M9 16.5l4.2 4.2L23 11"
+                fill="none"
+                stroke="#FFFFFF"
+                strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray={24}
+                style={{
+                  animation:
+                    'coreplate-check-draw 260ms ease forwards 120ms',
+                  strokeDashoffset: 24,
+                }}
+              />
+            </svg>
+          ) : (
+            <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                stroke="rgba(147, 104, 255, 0.22)"
+                strokeWidth={stroke}
+              />
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                stroke={state.failed > 0 ? '#F59E0B' : '#9368FF'}
+                strokeWidth={stroke}
+                strokeDasharray={c}
+                strokeDashoffset={c * (1 - ratio)}
+                strokeLinecap="round"
+                transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                style={{
+                  transition:
+                    'stroke-dashoffset 200ms ease, stroke 200ms ease',
+                }}
+              />
+            </svg>
+          )}
+        </div>
       <div
         style={{
           display: 'flex',
@@ -141,7 +210,8 @@ function PasteUploadOverlay() {
           )}
         </div>
       </div>
-    </div>,
+    </div>
+    </>,
     document.body
   );
 }
@@ -311,6 +381,8 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
           done: 0,
           failed: 0,
           active: true,
+          completed: false,
+          exiting: false,
         });
         try {
           for (let i = 0; i < srcs.length; i += 1) {
@@ -341,8 +413,23 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
             setQueueState({ done: queueState.done + 1 });
           }
         } finally {
-          // Brief hold so the user sees the full ring before it disappears.
-          setTimeout(() => setQueueState({ active: false }), 600);
+          // 1) Switch loader to a green check, hold briefly so the user
+          //    registers completion. 2) Trigger fade-out via opacity/transform
+          //    transition. 3) Reset state once the transition has played.
+          setQueueState({ completed: true });
+          setTimeout(() => {
+            setQueueState({ exiting: true });
+            setTimeout(() => {
+              setQueueState({
+                active: false,
+                exiting: false,
+                completed: false,
+                total: 0,
+                done: 0,
+                failed: 0,
+              });
+            }, 360);
+          }, 900);
         }
       })();
 
