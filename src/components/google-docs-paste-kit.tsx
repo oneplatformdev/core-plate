@@ -256,19 +256,25 @@ function PasteUploadOverlay() {
           onClick={cancelPasteQueue}
           disabled={state.cancelled}
           style={{
-            marginLeft: 6,
+            boxSizing: 'border-box',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             padding: '6px 12px',
-            border: 'none',
-            borderRadius: 10,
-            background: state.cancelled ? '#E5E7EB' : '#F3F4F6',
-            color: state.cancelled ? '#9CA3AF' : '#06080D',
+            height: 32,
+            background: '#FCFCFC',
+            border: '1px solid #E1E1E5',
+            borderRadius: 8,
+            color: '#06080D',
             fontFamily: "'Manrope', sans-serif",
-            fontWeight: 600,
+            fontWeight: 500,
             fontSize: 13,
-            lineHeight: '125%',
+            lineHeight: '140%',
             cursor: state.cancelled ? 'default' : 'pointer',
+            opacity: state.cancelled ? 0.5 : 1,
             pointerEvents: 'auto',
-            transition: 'background 160ms ease',
+            transition: 'opacity 160ms ease, background 160ms ease',
+            whiteSpace: 'nowrap',
           }}
         >
           {t('cancel')}
