@@ -411,6 +411,31 @@ const waitForPlaceholderRemoved = (
     tick();
   });
 
+// Mounted for the lifetime of the editor. When the editor unmounts (user
+// navigated away from the page) we wipe any in-flight queue state so a return
+// trip starts clean instead of showing a stale progress bar.
+function PasteQueueLifecycle() {
+  React.useEffect(() => {
+    return () => {
+      if (!queueState.active) return;
+      cancelRequested = true;
+      currentAbortController?.abort();
+      pasteAbortControllers.abortAll();
+      setQueueState({
+        active: false,
+        exiting: false,
+        completed: false,
+        cancelled: false,
+        total: 0,
+        done: 0,
+        failed: 0,
+      });
+      cancelRequested = false;
+    };
+  }, []);
+  return null;
+}
+
 function EditorBlockingOverlay() {
   const [state, setState] = React.useState<QueueState>(queueState);
 
@@ -454,6 +479,7 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
   render: {
     afterEditable: () => (
       <>
+        <PasteQueueLifecycle />
         <EditorBlockingOverlay />
         <PasteUploadOverlay />
       </>
