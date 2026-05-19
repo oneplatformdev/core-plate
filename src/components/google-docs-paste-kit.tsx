@@ -53,6 +53,31 @@ const subscribeQueue = (l: (s: QueueState) => void) => {
   };
 };
 
+// --- Public API for consumers --------------------------------------------
+// Consumers (autosave hooks, dirty-state trackers, etc.) can use these to
+// pause work while a Google-Docs paste is uploading images.
+
+export const isPlatePasteActive = (): boolean => queueState.active;
+
+export const subscribePlatePasteActive = (
+  cb: (active: boolean) => void
+): (() => void) => {
+  let last = queueState.active;
+  cb(last);
+  return subscribeQueue((s) => {
+    if (s.active !== last) {
+      last = s.active;
+      cb(last);
+    }
+  });
+};
+
+export function usePlatePasteActive(): boolean {
+  const [active, setActive] = React.useState<boolean>(queueState.active);
+  React.useEffect(() => subscribePlatePasteActive(setActive), []);
+  return active;
+}
+
 function PasteUploadOverlay() {
   const [state, setState] = React.useState<QueueState>(queueState);
   const { t } = usePlateI18n();
