@@ -51,17 +51,54 @@ const extractFilenameFromSrc = (src: string, index: number): string => {
   return `pasted-image-${Date.now()}-${index}.png`;
 };
 
+// PUA characters — not produced by Google Docs HTML and not whitespace, so
+// they survive Plate's HTML deserialization as plain text and we can locate
+// them later to splice in the actual media node at the right offset.
+const MARKER_OPEN = '';
+const MARKER_CLOSE = '';
+const markerFor = (index: number) => `${MARKER_OPEN}${index}${MARKER_CLOSE}`;
+
 const extractImagesFromHtml = (
   html: string
-): { srcs: string[]; cleanedBody: HTMLElement } => {
+): { srcs: string[]; markedBody: HTMLElement } => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   const imgs = Array.from(doc.querySelectorAll('img'));
-  const srcs = imgs
-    .map((img) => img.getAttribute('src') ?? '')
-    .filter(Boolean);
-  imgs.forEach((img) => img.remove());
-  return { srcs, cleanedBody: doc.body };
+  const srcs: string[] = [];
+  imgs.forEach((img) => {
+    const src = img.getAttribute('src') ?? '';
+    if (!src) {
+      img.remove();
+      return;
+    }
+    const index = srcs.length;
+    srcs.push(src);
+    img.replaceWith(doc.createTextNode(markerFor(index)));
+  });
+  return { srcs, markedBody: doc.body };
+};
+
+// Walks the editor for a text node containing the marker for `index` and
+// returns the slate range covering that marker.
+const findMarkerRange = (
+  editor: any,
+  index: number
+): { anchor: { path: number[]; offset: number }; focus: { path: number[]; offset: number } } | null => {
+  const needle = markerFor(index);
+  for (const [node, path] of editor.api.nodes({
+    at: [],
+    match: (n: any) => typeof n?.text === 'string',
+  })) {
+    const text: string = (node as any).text;
+    const at = text.indexOf(needle);
+    if (at >= 0) {
+      return {
+        anchor: { path, offset: at },
+        focus: { path, offset: at + needle.length },
+      };
+    }
+  }
+  return null;
 };
 
 // Snapshot all placeholder-node ids currently present in the editor. Used to
@@ -108,15 +145,16 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
       const html = data.getData('text/html');
       if (!html || !/<img[\s>]/i.test(html)) return;
 
-      const { srcs, cleanedBody } = extractImagesFromHtml(html);
+      const { srcs, markedBody } = extractImagesFromHtml(html);
       if (srcs.length === 0) return;
 
       event.preventDefault();
 
-      // Insert non-image HTML content first so the textual fragment lands at
-      // the caret. We then queue uploads asynchronously below.
-      if (cleanedBody.textContent?.trim() || cleanedBody.children.length) {
-        const fragment = editor.api.html.deserialize({ element: cleanedBody });
+      // Insert the whole HTML fragment first — images are now PUA-text markers,
+      // so the document structure (paragraphs, lists, ordering) is preserved
+      // and we know exactly where each image needs to land.
+      if (markedBody.textContent?.trim() || markedBody.children.length) {
+        const fragment = editor.api.html.deserialize({ element: markedBody });
         if (Array.isArray(fragment) && fragment.length > 0) {
           editor.tf.insertFragment(fragment);
         }
@@ -129,6 +167,16 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
           const file = src.startsWith('data:')
             ? await dataUrlToFile(src, name)
             : await urlToFile(src, name);
+
+          const range = findMarkerRange(editor, i);
+          if (!range) continue;
+
+          // Position caret at the marker and remove the marker text. If we
+          // failed to fetch the file, just drop the marker so it doesn't stay
+          // as garbage in the document.
+          editor.tf.select(range);
+          editor.tf.delete();
+
           if (!file) continue;
 
           const before = collectPlaceholderIds(editor);
