@@ -15,6 +15,8 @@ export function LinkElementStatic(props: SlateElementProps<TLinkElement>) {
       attributes={{
         ...props.attributes,
         ...getLinkAttributes(props.editor, props.element),
+        target: '_blank',
+        rel: 'noopener noreferrer',
       }}
     >
       {props.children}
