@@ -8,6 +8,8 @@ import { KEYS } from 'platejs';
 import { createPlatePlugin } from 'platejs/react';
 
 import { usePlateI18n } from '@/i18n/provider';
+import { measureImageFile, pasteImageHints } from '@/lib/paste-image-hints';
+import { pasteAbortControllers } from '@/lib/paste-abort';
 
 type QueueState = {
   total: number;
@@ -16,6 +18,7 @@ type QueueState = {
   active: boolean;
   completed: boolean;
   exiting: boolean;
+  cancelled: boolean;
 };
 const initialQueueState: QueueState = {
   total: 0,
@@ -24,6 +27,18 @@ const initialQueueState: QueueState = {
   active: false,
   completed: false,
   exiting: false,
+  cancelled: false,
+};
+
+// Module-level cancel flag the paste loop polls between iterations.
+let cancelRequested = false;
+let currentAbortController: AbortController | null = null;
+
+const cancelPasteQueue = () => {
+  cancelRequested = true;
+  currentAbortController?.abort();
+  pasteAbortControllers.abortAll();
+  setQueueState({ cancelled: true });
 };
 let queueState: QueueState = initialQueueState;
 const queueListeners = new Set<(s: QueueState) => void>();
@@ -37,6 +52,31 @@ const subscribeQueue = (l: (s: QueueState) => void) => {
     queueListeners.delete(l);
   };
 };
+
+// --- Public API for consumers --------------------------------------------
+// Consumers (autosave hooks, dirty-state trackers, etc.) can use these to
+// pause work while a Google-Docs paste is uploading images.
+
+export const isPlatePasteActive = (): boolean => queueState.active;
+
+export const subscribePlatePasteActive = (
+  cb: (active: boolean) => void
+): (() => void) => {
+  let last = queueState.active;
+  cb(last);
+  return subscribeQueue((s) => {
+    if (s.active !== last) {
+      last = s.active;
+      cb(last);
+    }
+  });
+};
+
+export function usePlatePasteActive(): boolean {
+  const [active, setActive] = React.useState<boolean>(queueState.active);
+  React.useEffect(() => subscribePlatePasteActive(setActive), []);
+  return active;
+}
 
 function PasteUploadOverlay() {
   const [state, setState] = React.useState<QueueState>(queueState);
@@ -210,6 +250,36 @@ function PasteUploadOverlay() {
           )}
         </div>
       </div>
+      {!state.completed && !state.exiting && (
+        <button
+          type="button"
+          onClick={cancelPasteQueue}
+          disabled={state.cancelled}
+          style={{
+            boxSizing: 'border-box',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '6px 12px',
+            height: 32,
+            background: '#FCFCFC',
+            border: '1px solid #E1E1E5',
+            borderRadius: 8,
+            color: '#06080D',
+            fontFamily: "'Manrope', sans-serif",
+            fontWeight: 500,
+            fontSize: 13,
+            lineHeight: '140%',
+            cursor: state.cancelled ? 'default' : 'pointer',
+            opacity: state.cancelled ? 0.5 : 1,
+            pointerEvents: 'auto',
+            transition: 'opacity 160ms ease, background 160ms ease',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {t('cancel')}
+        </button>
+      )}
     </div>
     </>,
     document.body
@@ -347,13 +417,88 @@ const waitForPlaceholderRemoved = (
     tick();
   });
 
+// Mounted for the lifetime of the editor. When the editor unmounts (user
+// navigated away from the page) we wipe any in-flight queue state so a return
+// trip starts clean instead of showing a stale progress bar.
+function PasteQueueLifecycle() {
+  React.useEffect(() => {
+    return () => {
+      if (!queueState.active) return;
+      cancelRequested = true;
+      currentAbortController?.abort();
+      pasteAbortControllers.abortAll();
+      setQueueState({
+        active: false,
+        exiting: false,
+        completed: false,
+        cancelled: false,
+        total: 0,
+        done: 0,
+        failed: 0,
+      });
+      cancelRequested = false;
+    };
+  }, []);
+  return null;
+}
+
+function EditorBlockingOverlay() {
+  const [state, setState] = React.useState<QueueState>(queueState);
+
+  React.useEffect(() => subscribeQueue(setState), []);
+
+  if (!state.active) return null;
+
+  // Once the queue has finished (completed) we let pointer events through
+  // again — the fade-out is purely cosmetic and shouldn't block typing.
+  const blocking = !state.completed;
+
+  return (
+    <div
+      aria-hidden
+      onMouseDownCapture={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onClickCapture={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'rgba(255, 255, 255, 0.45)',
+        backdropFilter: 'blur(2px)',
+        WebkitBackdropFilter: 'blur(2px)',
+        cursor: 'progress',
+        zIndex: 40,
+        opacity: state.exiting ? 0 : 1,
+        transition: 'opacity 320ms ease',
+        pointerEvents: blocking ? 'auto' : 'none',
+      }}
+    />
+  );
+}
+
 export const GoogleDocsPastePlugin = createPlatePlugin({
   key: 'googleDocsPaste',
   render: {
-    afterEditable: () => <PasteUploadOverlay />,
+    afterEditable: () => (
+      <>
+        <PasteQueueLifecycle />
+        <EditorBlockingOverlay />
+        <PasteUploadOverlay />
+      </>
+    ),
   },
   handlers: {
     onPaste: ({ editor, event }) => {
+      // While a queue is running, swallow further paste attempts entirely.
+      if (queueState.active) {
+        event.preventDefault();
+        return true;
+      }
+
       const data = (event as unknown as ClipboardEvent).clipboardData;
       if (!data) return;
 
@@ -376,6 +521,7 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
       }
 
       void (async () => {
+        cancelRequested = false;
         setQueueState({
           total: srcs.length,
           done: 0,
@@ -383,14 +529,19 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
           active: true,
           completed: false,
           exiting: false,
+          cancelled: false,
         });
         try {
           for (let i = 0; i < srcs.length; i += 1) {
+            if (cancelRequested) break;
+
             const src = srcs[i];
             const name = extractFilenameFromSrc(src, i + 1);
             const file = src.startsWith('data:')
               ? await dataUrlToFile(src, name)
               : await urlToFile(src, name);
+
+            if (cancelRequested) break;
 
             const range = findMarkerRange(editor, i);
             if (range) {
@@ -403,33 +554,86 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
               continue;
             }
 
+            // Pre-measure so the skeleton box can reserve the right aspect
+            // ratio from the very first paint — keeps the editor from
+            // scroll-jumping as each image loads.
+            const dims = await measureImageFile(file);
+            if (cancelRequested) break;
+
             const before = collectPlaceholderIds(editor);
             const dt = new DataTransfer();
             dt.items.add(file);
             editor.getTransforms(PlaceholderPlugin).insert.media(dt.files);
             const after = collectPlaceholderIds(editor);
             const newId = [...after].find((id) => !before.has(id));
+
+            if (newId && dims) pasteImageHints.set(newId, dims);
+
+            // Hook an AbortController to this placeholder. PlaceholderElement
+            // reads it via pasteAbortControllers.get(id) and passes the signal
+            // through to the consumer's onUploadFile(file, { signal }).
+            const controller = new AbortController();
+            currentAbortController = controller;
+            if (newId) pasteAbortControllers.set(newId, controller);
+
             if (newId) await waitForPlaceholderRemoved(editor, newId);
+
+            if (newId) {
+              pasteImageHints.delete(newId);
+              pasteAbortControllers.delete(newId);
+            }
+            currentAbortController = null;
+
+            if (cancelRequested) break;
             setQueueState({ done: queueState.done + 1 });
           }
         } finally {
-          // 1) Switch loader to a green check, hold briefly so the user
-          //    registers completion. 2) Trigger fade-out via opacity/transform
-          //    transition. 3) Reset state once the transition has played.
-          setQueueState({ completed: true });
-          setTimeout(() => {
+          // If we were cancelled, sweep any leftover PUA markers out of the
+          // document so the user isn't left with garbage text where the
+          // un-uploaded images would have gone.
+          if (cancelRequested) {
+            for (let i = 0; i < srcs.length; i += 1) {
+              const range = findMarkerRange(editor, i);
+              if (!range) continue;
+              editor.tf.select(range);
+              editor.tf.delete();
+            }
+          }
+
+          if (cancelRequested) {
+            // Skip the green check on cancel — just fade out.
             setQueueState({ exiting: true });
             setTimeout(() => {
               setQueueState({
                 active: false,
                 exiting: false,
                 completed: false,
+                cancelled: false,
                 total: 0,
                 done: 0,
                 failed: 0,
               });
+              cancelRequested = false;
             }, 360);
-          }, 900);
+          } else {
+            // 1) Switch loader to a green check, hold briefly so the user
+            //    registers completion. 2) Trigger fade-out. 3) Reset state.
+            setQueueState({ completed: true });
+            setTimeout(() => {
+              setQueueState({ exiting: true });
+              setTimeout(() => {
+                setQueueState({
+                  active: false,
+                  exiting: false,
+                  completed: false,
+                  cancelled: false,
+                  total: 0,
+                  done: 0,
+                  failed: 0,
+                });
+              }, 360);
+            }, 900);
+          }
         }
       })();
 

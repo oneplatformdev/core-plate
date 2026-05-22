@@ -30,6 +30,8 @@ export function LinkElement(props: PlateElementProps<TLinkElement>) {
       attributes={{
         ...props.attributes,
         ...getLinkAttributes(props.editor, props.element),
+        target: '_blank',
+        rel: 'noopener noreferrer',
         onMouseOver: (e) => {
           e.stopPropagation();
         },

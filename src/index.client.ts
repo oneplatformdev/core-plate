@@ -9,3 +9,8 @@ export { defaultPlateMessages, ukPlateMessages, type PlateMessageKey, type Plate
 export { PlateI18nProvider, usePlateI18n } from '@/i18n/provider';
 export { FileUploadContext, type FileUploadContextValue, type UploadOptions, type UploadResultLike } from '@/context/file-upload-context';
 export { UploadErrorCode, type UploadError } from '@platejs/media/react';
+export {
+  isPlatePasteActive,
+  subscribePlatePasteActive,
+  usePlatePasteActive,
+} from '@/components/google-docs-paste-kit';

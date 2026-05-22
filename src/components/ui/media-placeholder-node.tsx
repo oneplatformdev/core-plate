@@ -18,6 +18,8 @@ import { useFilePicker } from 'use-file-picker';
 import { cn } from '@/lib/utils';
 import { focusEditorReliably } from '@/lib/focus-editor';
 import { useUploadFile } from '@/hooks/use-upload-file';
+import { pasteImageHints } from '@/lib/paste-image-hints';
+import { pasteAbortControllers } from '@/lib/paste-abort';
 
 const CONTENT: Record<
   string,
@@ -85,9 +87,11 @@ export const PlaceholderElement = withHOC(
     const replaceCurrentPlaceholder = React.useCallback(
       (file: File) => {
         api.placeholder.addUploadingFile(element.id as string, file);
-        uploadFile(file).catch(() => {
+        const controller = pasteAbortControllers.get(element.id as string);
+        uploadFile(file, { signal: controller?.signal }).catch(() => {
           // Error already surfaced via onUploadError. Tear down placeholder
-          // so the editor doesn't show a stuck "uploading" indicator.
+          // so the editor doesn't show a stuck "uploading" indicator. Same
+          // path for aborted uploads — the cancelled image just disappears.
           api.placeholder.removeUploadingFile(element.id as string);
           const path = editor.api.findPath(element);
           if (path) {
@@ -121,7 +125,7 @@ export const PlaceholderElement = withHOC(
           placeholderId: element.id as string,
           type: element.mediaType!,
           url: uploadedFile.url,
-          ...(isResizableMedia ? { width: 400 } : {}),
+          ...(isResizableMedia ? { width: 'calc(100% - 80px)' } : {}),
         };
 
         editor.tf.insertNodes(node, { at: path });
@@ -169,9 +173,13 @@ export const PlaceholderElement = withHOC(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isReplaced]);
 
+    const imageHint = isImage
+      ? pasteImageHints.get(element.id as string)
+      : undefined;
+
     return (
       <PlateElement className="my-1" {...props}>
-        {(!loading || !isImage) && (
+        {!isImage && (
           <div
             className={cn(
               'flex cursor-pointer select-none items-center rounded-sm bg-muted p-3 pr-9 hover:bg-primary/10'
@@ -187,7 +195,7 @@ export const PlaceholderElement = withHOC(
                 {loading ? uploadingFile?.name : currentContent.content}
               </div>
 
-              {loading && !isImage && (
+              {loading && (
                 <div className="mt-1 flex items-center gap-1.5">
                   <div>{formatBytes(uploadingFile?.size ?? 0)}</div>
                   <div>–</div>
@@ -201,13 +209,17 @@ export const PlaceholderElement = withHOC(
           </div>
         )}
 
-        {isImage && loading && (
-          <ImageProgress
-            file={uploadingFile}
-            imageRef={imageRef}
-            progress={progress}
-          />
-        )}
+        {isImage &&
+          (loading && uploadingFile ? (
+            <ImageProgress
+              file={uploadingFile}
+              imageRef={imageRef}
+              progress={progress}
+              placeholderId={element.id as string}
+            />
+          ) : (
+            <ImageSkeleton hint={imageHint} />
+          ))}
 
         {props.children}
       </PlateElement>
@@ -215,27 +227,66 @@ export const PlaceholderElement = withHOC(
   }
 );
 
+function ImageSkeleton({
+  hint,
+}: {
+  hint?: { width: number; height: number };
+}) {
+  return (
+    <div
+      className="relative mx-auto w-[calc(100%-80px)]"
+      contentEditable={false}
+      style={{
+        aspectRatio: hint ? `${hint.width} / ${hint.height}` : undefined,
+        minHeight: hint ? undefined : 160,
+      }}
+      aria-hidden
+    >
+      <div className="absolute inset-0 animate-pulse rounded-sm bg-muted" />
+    </div>
+  );
+}
+
 export function ImageProgress({
   className,
   file,
   imageRef,
   progress = 0,
+  placeholderId,
 }: {
   file: File;
   className?: string;
   imageRef?: React.RefObject<HTMLImageElement | null>;
   progress?: number;
+  placeholderId?: string;
 }) {
   const [objectUrl, setObjectUrl] = React.useState<string | null>(null);
+  const [aspect, setAspect] = React.useState<string | undefined>(() => {
+    if (!placeholderId) return undefined;
+    const hint = pasteImageHints.get(placeholderId);
+    return hint ? `${hint.width} / ${hint.height}` : undefined;
+  });
 
   React.useEffect(() => {
     const url = URL.createObjectURL(file);
     setObjectUrl(url);
 
+    // If we don't already have a hint from the paste flow, probe the file's
+    // natural dimensions ourselves so the skeleton box still reserves space.
+    if (!aspect) {
+      const probe = new Image();
+      probe.onload = () => {
+        if (probe.naturalWidth && probe.naturalHeight) {
+          setAspect(`${probe.naturalWidth} / ${probe.naturalHeight}`);
+        }
+      };
+      probe.src = url;
+    }
+
     return () => {
       URL.revokeObjectURL(url);
     };
-  }, [file]);
+  }, [file, aspect]);
 
   if (!objectUrl) {
     return null;
@@ -243,23 +294,27 @@ export function ImageProgress({
 
   return (
     <div
-      className={cn('relative mx-auto w-fit max-w-[400px]', className)}
+      className={cn('relative mx-auto w-[calc(100%-80px)]', className)}
       contentEditable={false}
+      style={{
+        aspectRatio: aspect,
+        minHeight: aspect ? undefined : 120,
+      }}
     >
+      {/* Hidden img keeps imageRef.width/height in sync with the reserved box,
+          so the eventual media node inherits the same dimensions and there is
+          no swap-time layout shift. */}
       <img
         ref={imageRef}
-        className="h-auto w-full max-w-[400px] rounded-sm object-cover"
+        className="absolute inset-0 h-full w-full rounded-sm object-cover opacity-0"
         alt={file.name}
         src={objectUrl}
+        aria-hidden
       />
-      {progress < 100 && (
-        <div className="absolute right-1 bottom-1 flex items-center space-x-2 rounded-full bg-black/50 px-1 py-0.5">
-          <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />
-          <span className="font-medium text-white text-xs">
-            {Math.round(progress)}%
-          </span>
-        </div>
-      )}
+      <div
+        className="absolute inset-0 animate-pulse rounded-sm bg-muted"
+        aria-hidden
+      />
     </div>
   );
 }

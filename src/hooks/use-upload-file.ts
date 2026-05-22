@@ -66,7 +66,7 @@ export function useUploadFile({
     []
   );
 
-  async function uploadThing(file: File) {
+  async function uploadThing(file: File, options?: { signal?: AbortSignal }) {
     setIsUploading(true);
     setUploadingFile(file);
 
@@ -95,6 +95,7 @@ export function useUploadFile({
       }
 
       const uploaded = await uploadWithConsumer(file, {
+        signal: options?.signal,
         onProgress: (percent) => {
           if (typeof percent === 'number' && !Number.isNaN(percent)) {
             setProgress(Math.max(0, Math.min(100, percent)));
