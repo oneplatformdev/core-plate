@@ -48,6 +48,7 @@ const FONT_SIZES = [
 export function FontSizeToolbarButton() {
   const [inputValue, setInputValue] = React.useState(DEFAULT_FONT_SIZE);
   const [isFocused, setIsFocused] = React.useState(false);
+  const isSelectingRef = React.useRef(false);
   const inOverflowMenu = useToolbarOverflowMenu();
   const { editor, tf } = useEditorPlugin(FontSizePlugin);
 
@@ -110,6 +111,13 @@ export function FontSizeToolbarButton() {
             value={displayValue}
             onBlur={() => {
               setIsFocused(false);
+
+              if (isSelectingRef.current) {
+                isSelectingRef.current = false;
+
+                return;
+              }
+
               handleInputChange();
             }}
             onChange={(e) => setInputValue(e.target.value)}
@@ -137,11 +145,16 @@ export function FontSizeToolbarButton() {
             <button
               key={size}
               className={cn(
-                'flex h-8 w-full items-center justify-center text-sm hover:bg-accent data-[highlighted=true]:bg-accent'
+                'flex h-8 w-full cursor-pointer items-center justify-center text-sm hover:bg-accent data-[highlighted=true]:bg-accent'
               )}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                isSelectingRef.current = true;
+              }}
               onClick={() => {
                 tf.fontSize.addMark(`${size}px`);
                 setIsFocused(false);
+                editor.tf.focus();
               }}
               data-highlighted={size === displayValue}
               type="button"
