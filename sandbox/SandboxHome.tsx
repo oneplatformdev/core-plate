@@ -7,12 +7,19 @@ import { demoValue } from './demo-value';
 
 type SandboxHomeProps = {
   onOpenFeedCreate: () => void;
+  onOpenTablePreview: () => void;
 };
 
-export function SandboxHome({ onOpenFeedCreate }: SandboxHomeProps) {
+export function SandboxHome({
+  onOpenFeedCreate,
+  onOpenTablePreview,
+}: SandboxHomeProps) {
   const [locale, setLocale] = useState<'en' | 'uk'>('uk');
-  const [isStatic, setIsStatic] = useState(false);
+  const [mode, setMode] = useState<'editor' | 'readonly' | 'static'>('editor');
   const [editorValue, setEditorValue] = useState<Value>(demoValue);
+
+  const nextMode =
+    mode === 'editor' ? 'readonly' : mode === 'readonly' ? 'static' : 'editor';
 
   return (
     <div style={{ padding: 16 }}>
@@ -31,6 +38,23 @@ export function SandboxHome({ onOpenFeedCreate }: SandboxHomeProps) {
           }}
         >
           Open FeedCreate Layout
+        </button>
+
+        <button
+          type="button"
+          onClick={onOpenTablePreview}
+          style={{
+            border: '1px solid #d4d4d8',
+            borderRadius: 8,
+            background: '#ffffff',
+            cursor: 'pointer',
+            fontSize: 13,
+            fontWeight: 600,
+            marginLeft: 8,
+            padding: '8px 12px',
+          }}
+        >
+          Open Wide Table Prototype
         </button>
       </div>
 
@@ -53,7 +77,7 @@ export function SandboxHome({ onOpenFeedCreate }: SandboxHomeProps) {
 
         <button
           type="button"
-          onClick={() => setIsStatic((prev) => !prev)}
+          onClick={() => setMode(nextMode)}
           style={{
             border: '1px solid #d4d4d8',
             borderRadius: 8,
@@ -64,16 +88,18 @@ export function SandboxHome({ onOpenFeedCreate }: SandboxHomeProps) {
             padding: '6px 10px',
           }}
         >
-          Mode: {isStatic ? 'Static' : 'Editor'}
+          Mode: {mode} (tap to cycle)
         </button>
       </div>
 
-      {isStatic ? (
+      {mode === 'static' ? (
         <StaticEditor value={editorValue} />
       ) : (
         <PlateEditor
+          key={mode}
           initialValue={editorValue}
           locale={locale}
+          readOnly={mode === 'readonly'}
           onChangeDebounceMs={0}
           onChangeValues={setEditorValue}
         />

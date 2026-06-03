@@ -145,6 +145,13 @@ export const defaultPlateMessages = {
   typeSomethingPlaceholder: 'Type something...',
   pasteUploadingFiles: 'Uploading files, please wait',
   pasteUploadingFailed: '{{failed}} failed',
+  expandTable: 'Expand',
+  openTable: 'Open table',
+  fitToWidth: 'Fit to width',
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
+  editTable: 'Editing table',
+  escToClose: 'Press Esc to close',
 } as const;
 
 export type PlateMessageKey = keyof typeof defaultPlateMessages;
@@ -297,6 +304,13 @@ export const ukPlateMessages: Record<PlateMessageKey, string> = {
   writeCaption: 'Додайте підпис...',
   pasteUploadingFiles: 'Відбувається завантаження файлів, зачекайте будь ласка',
   pasteUploadingFailed: '{{failed}} з помилкою',
+  expandTable: 'Розгорнути',
+  openTable: 'Відкрити таблицю',
+  fitToWidth: 'За шириною',
+  zoomIn: 'Збільшити',
+  zoomOut: 'Зменшити',
+  editTable: 'Редагування таблиці',
+  escToClose: 'Натисніть Esc, щоб закрити',
 };
 
 

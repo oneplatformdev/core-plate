@@ -33,11 +33,13 @@ import {
 import { usePlateI18n } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 
+import { TableExpandedContext } from './table-expanded-context';
 import { ToolbarButton } from './toolbar';
 import { useToolbarOverflowMenu } from './toolbar-overflow-context';
 
 export function TableToolbarButton(props: DropdownMenuProps) {
   const { t } = usePlateI18n();
+  const isInsideFullscreen = React.useContext(TableExpandedContext);
   const tableSelected = useEditorSelector(
     (editor) => editor.api.some({ match: { type: KEYS.table } }),
     []
@@ -47,6 +49,10 @@ export function TableToolbarButton(props: DropdownMenuProps) {
   const [open, setOpen] = React.useState(false);
   const inOverflowMenu = useToolbarOverflowMenu();
   const mergeState = useTableMergeState();
+
+  // Inside the fullscreen table editor the document is a single table, so the
+  // "insert table" toolbar control is redundant — hide it.
+  if (isInsideFullscreen) return null;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
