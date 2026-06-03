@@ -69,7 +69,7 @@ export function TableFullscreenEditor({
           tooltip opened after this overlay stacks above it by DOM order, while
           the dimmed backdrop still covers the page editor below. */}
       <div
-        className="fixed inset-0 z-50 flex flex-col bg-black/50 p-2 sm:p-6"
+        className="op-plate-scope fixed inset-0 z-50 flex flex-col bg-black/50 p-2 sm:p-6"
         onClick={(e) => {
           if (e.target === e.currentTarget) cancel();
         }}

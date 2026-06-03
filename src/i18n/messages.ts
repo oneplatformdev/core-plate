@@ -151,6 +151,7 @@ export const defaultPlateMessages = {
   zoomIn: 'Zoom in',
   zoomOut: 'Zoom out',
   editTable: 'Editing table',
+  viewTable: 'Table view',
   escToClose: 'Press Esc to close',
 } as const;
 
@@ -310,6 +311,7 @@ export const ukPlateMessages: Record<PlateMessageKey, string> = {
   zoomIn: 'Збільшити',
   zoomOut: 'Зменшити',
   editTable: 'Редагування таблиці',
+  viewTable: 'Перегляд таблиці',
   escToClose: 'Натисніть Esc, щоб закрити',
 };
 

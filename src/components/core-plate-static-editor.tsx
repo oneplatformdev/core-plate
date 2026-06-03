@@ -9,6 +9,8 @@ import {
   ToggleStaticProvider,
 } from '@/components/toggle-static-context';
 import { EditorStatic } from '@/components/ui/editor-static';
+import { type PlateMessages } from '@/i18n/messages';
+import { PlateI18nProvider } from '@/i18n/provider';
 
 const defaultValue = normalizeStaticValue([
   {
@@ -19,11 +21,15 @@ const defaultValue = normalizeStaticValue([
 
 export type StaticEditorProps = {
   className?: string;
+  locale?: 'en' | 'uk';
+  messages?: PlateMessages;
   value?: Value;
 };
 
 export function StaticEditor({
   className,
+  locale = 'uk',
+  messages,
   value = defaultValue,
 }: StaticEditorProps) {
   const [openIds, setOpenIds] = React.useState<Set<string>>(() => new Set());
@@ -52,8 +58,14 @@ export function StaticEditor({
   );
 
   return (
-    <ToggleStaticProvider openIds={openIds} toggle={toggle}>
-      <EditorStatic className={className} editor={editor} value={visibleValue} />
-    </ToggleStaticProvider>
+    <PlateI18nProvider locale={locale} messages={messages}>
+      <ToggleStaticProvider openIds={openIds} toggle={toggle}>
+        <EditorStatic
+          className={className}
+          editor={editor}
+          value={visibleValue}
+        />
+      </ToggleStaticProvider>
+    </PlateI18nProvider>
   );
 }
