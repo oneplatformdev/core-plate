@@ -101,6 +101,10 @@ import {
   BorderRightIcon,
   BorderTopIcon,
 } from './table-icons';
+import { TableEditorExpandable } from './table-editor-expandable';
+import { TableExpandedContext } from './table-expanded-context';
+import { TableFullscreenEditor } from './table-fullscreen-editor';
+import { TablePreviewFrame } from './table-preview-frame';
 import {
   Toolbar,
   ToolbarButton,
@@ -675,6 +679,10 @@ export const TableElement = withHOC(
 
     const isSelectingTable = useBlockSelected(props.element.id as string);
 
+    const editor = useEditorRef();
+    const isInsideFullscreen = React.useContext(TableExpandedContext);
+    const [expanded, setExpanded] = React.useState(false);
+
     const content = (
       <PlateElement
         {...props}
@@ -751,10 +759,72 @@ export const TableElement = withHOC(
     );
 
     if (readOnly) {
-      return content;
+      return (
+        <PlateElement
+          {...props}
+          className="py-5"
+          style={{ paddingLeft: marginLeft }}
+        >
+          <TablePreviewFrame>
+            {(ref) => (
+              <div ref={ref} className="w-fit" style={tableVariableStyle}>
+                <table
+                  className="mr-0 ml-px table h-px table-fixed border-collapse"
+                  style={tableStyle}
+                  {...tableProps}
+                >
+                  {resolvedColSizes.length > 0 && (
+                    <colgroup>
+                      {resolvedColSizes.map((colSize, index) => (
+                        <col
+                          key={index}
+                          style={{
+                            maxWidth: colSize,
+                            minWidth: colSize,
+                            width: colSize,
+                          }}
+                        />
+                      ))}
+                    </colgroup>
+                  )}
+                  <tbody className="min-w-full">{children}</tbody>
+                </table>
+              </div>
+            )}
+          </TablePreviewFrame>
+        </PlateElement>
+      );
     }
 
-    return <TableFloatingToolbar>{content}</TableFloatingToolbar>;
+    // Already inside the fullscreen sub-editor: edit normally, no nested expand.
+    if (isInsideFullscreen) {
+      return <TableFloatingToolbar>{content}</TableFloatingToolbar>;
+    }
+
+    return (
+      <>
+        <TableEditorExpandable
+          tableWrapRef={wrapperRef}
+          onExpand={() => setExpanded(true)}
+        >
+          <TableFloatingToolbar>{content}</TableFloatingToolbar>
+        </TableEditorExpandable>
+
+        {expanded && (
+          <TableFullscreenEditor
+            element={props.element}
+            onClose={(next) => {
+              setExpanded(false);
+              if (!next) return;
+              editor.tf.withoutNormalizing(() => {
+                editor.tf.removeNodes({ at: tablePath });
+                editor.tf.insertNodes(next, { at: tablePath });
+              });
+            }}
+          />
+        )}
+      </>
+    );
   }
 );
 
@@ -898,6 +968,7 @@ function TableFloatingToolbarContent({
   onSplit?: () => void;
 }) {
   const { t } = usePlateI18n();
+  const isInsideFullscreen = React.useContext(TableExpandedContext);
   return (
     <PopoverContent
       asChild
@@ -944,7 +1015,7 @@ function TableFloatingToolbarContent({
             </DropdownMenuPortal>
           </DropdownMenu>
 
-          {collapsedInside && (
+          {collapsedInside && !isInsideFullscreen && (
             <ToolbarGroup>
               <ToolbarButton tooltip={t('deleteTable')} {...buttonProps}>
                 <Trash2Icon />

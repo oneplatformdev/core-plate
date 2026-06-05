@@ -8,6 +8,8 @@ import { SlateElement } from 'platejs/static';
 
 import { cn } from '@/lib/utils';
 
+import { TablePreviewFrame } from './table-preview-frame';
+
 export function TableElementStatic({
   children,
   ...props
@@ -16,19 +18,19 @@ export function TableElementStatic({
   const marginLeft = disableMarginLeft ? 0 : props.element.marginLeft;
 
   return (
-    <SlateElement
-      {...props}
-      className="overflow-x-auto py-5"
-      style={{ paddingLeft: marginLeft }}
-    >
-      <div className="group/table relative w-fit">
-        <table
-          className="mr-0 ml-px table h-px min-w-full border-collapse"
-          style={{ borderCollapse: 'collapse', width: 'max-content' }}
-        >
-          <tbody className="min-w-full">{children}</tbody>
-        </table>
-      </div>
+    <SlateElement {...props} className="py-5" style={{ paddingLeft: marginLeft }}>
+      <TablePreviewFrame>
+        {(ref) => (
+          <div ref={ref} className="group/table relative w-fit">
+            <table
+              className="mr-0 ml-px table h-px min-w-full border-collapse"
+              style={{ borderCollapse: 'collapse', width: 'max-content' }}
+            >
+              <tbody className="min-w-full">{children}</tbody>
+            </table>
+          </div>
+        )}
+      </TablePreviewFrame>
     </SlateElement>
   );
 }
