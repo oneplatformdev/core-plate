@@ -162,3 +162,22 @@
   --highlight: oklch(0.852 0.199 91.936);
   --brand: oklch(0.707 0.165 254.624);
 }
+/* Аудіоплеєр медіа-ноди: повзунок доріжки */
+.op-audio-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--foreground);
+  cursor: pointer;
+  border: none;
+}
+.op-audio-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--foreground);
+  cursor: pointer;
+  border: none;
+}
