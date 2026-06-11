@@ -50,6 +50,31 @@ export function AudioPlayer({
     }
   }, []);
 
+  // Force a real download instead of opening a new tab: cross-origin URLs ignore
+  // the `download` attribute, so we fetch the file as a blob and save it locally.
+  const handleDownload = React.useCallback(
+    async (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (!url) return;
+      e.preventDefault();
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = downloadName || url.split('/').pop() || 'audio';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(objectUrl);
+      } catch {
+        // Fallback (e.g. CORS blocked): open in a new tab as before.
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    },
+    [url, downloadName],
+  );
+
   const onSeek = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -117,13 +142,11 @@ export function AudioPlayer({
         <a
           href={url}
           download={downloadName}
-          rel="noopener noreferrer"
-          target="_blank"
+          onClick={handleDownload}
           className="flex size-8 shrink-0 items-center justify-center transition-opacity hover:opacity-80"
-          style={{ color: '#9368ff' }}
           aria-label="Download"
         >
-          <DownloadIcon className="size-5" />
+          <DownloadIcon className="size-5" color="#9368ff" />
         </a>
       )}
     </div>

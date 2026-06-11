@@ -47,10 +47,9 @@ export function FileElementStatic(props: SlateElementProps<TFileElement>) {
           rel="noopener noreferrer"
           target="_blank"
           className="flex size-8 shrink-0 items-center justify-center transition-opacity hover:opacity-80"
-          style={{ color: '#9368ff' }}
           aria-label={name}
         >
-          <DownloadIcon className="size-5" />
+          <DownloadIcon className="size-5" color="#9368ff" />
         </a>
       </div>
       {props.children}
