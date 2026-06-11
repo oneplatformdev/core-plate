@@ -46,7 +46,7 @@ export function FileElementStatic(props: SlateElementProps<TFileElement>) {
           download={name}
           rel="noopener noreferrer"
           target="_blank"
-          className="flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+          className="flex size-8 shrink-0 items-center justify-center text-[#9368ff] transition-opacity hover:opacity-80"
           aria-label={name}
         >
           <DownloadIcon className="size-5" />

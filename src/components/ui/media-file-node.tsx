@@ -74,7 +74,7 @@ export const FileElement = withHOC(
             download={fileName}
             rel="noopener noreferrer"
             target="_blank"
-            className="flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+            className="flex size-8 shrink-0 items-center justify-center text-[#9368ff] transition-opacity hover:opacity-80"
             aria-label={fileName}
           >
             <DownloadIcon className="size-5" />

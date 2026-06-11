@@ -83,7 +83,7 @@ export function AudioPlayer({
       <button
         type="button"
         onClick={toggle}
-        className="flex size-8 shrink-0 items-center justify-center text-foreground"
+        className="flex size-8 shrink-0 items-center justify-center text-[#9368ff]"
         aria-label={playing ? 'Pause' : 'Play'}
       >
         {playing ? (
@@ -103,7 +103,8 @@ export function AudioPlayer({
           onChange={onSeek}
           className="op-audio-range h-1 w-full cursor-pointer appearance-none rounded-full outline-none"
           style={{
-            background: `linear-gradient(to right, var(--foreground) 0%, var(--foreground) ${progressFill}, var(--muted) ${progressFill}, var(--muted) 100%)`,
+            accentColor: '#9368ff',
+            background: `linear-gradient(to right, #9368ff 0%, #9368ff ${progressFill}, var(--muted) ${progressFill}, var(--muted) 100%)`,
           }}
         />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -118,7 +119,7 @@ export function AudioPlayer({
           download={downloadName}
           rel="noopener noreferrer"
           target="_blank"
-          className="flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+          className="flex size-8 shrink-0 items-center justify-center text-[#9368ff] transition-opacity hover:opacity-80"
           aria-label="Download"
         >
           <DownloadIcon className="size-5" />
