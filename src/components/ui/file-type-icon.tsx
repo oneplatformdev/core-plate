@@ -2,9 +2,6 @@ import * as React from 'react';
 
 import { getFileExtension } from '@/lib/file-format';
 
-/**
- * Кольори бейджів за форматом — узгоджені з icon-набором Dropzone (core-web).
- */
 const EXT_COLOR: Record<string, string> = {
   pdf: '#DC2626',
   doc: '#0062FF',
@@ -24,25 +21,18 @@ const EXT_COLOR: Record<string, string> = {
 };
 
 const DEFAULT_COLOR = '#64748B';
-/** Максимум символів у бейджі (xlsx/pptx — 4). */
 const MAX_LABEL = 4;
 
 export interface FileTypeIconProps {
-  /** Імʼя файлу або URL — з нього береться розширення. */
   name?: string | null;
   className?: string;
   size?: number;
 }
 
-/**
- * Бейдж формату файлу: лист зі скругленим уголком + підпис розширення.
- * Форма та палітра відтворюють набір іконок Dropzone.
- */
 export function FileTypeIcon({ name, className, size = 40 }: FileTypeIconProps) {
   const ext = getFileExtension(name);
   const color = EXT_COLOR[ext] ?? DEFAULT_COLOR;
   const label = (ext || 'file').slice(0, MAX_LABEL).toUpperCase();
-  // Менший шрифт для довгих підписів (XLSX/PPTX).
   const fontSize = label.length >= 4 ? 8 : 9;
 
   return (

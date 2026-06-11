@@ -25,7 +25,6 @@ type TAudioElementWithMeta = TAudioElement & {
   size?: number;
 };
 
-/** Кастомний аудіоплеєр: play/pause, скрол доріжки, поточний час / тривалість. */
 export function AudioPlayer({
   url,
   className,
@@ -153,7 +152,6 @@ export function AudioPlayer({
   );
 }
 
-/** Рядок метаданих: "Lecture 1.wav · 4 min 35 sec · 5.2 MB". */
 export function MediaMeta({
   parts,
   className,
@@ -192,7 +190,6 @@ export const AudioElement = withHOC(
 
     const [duration, setDuration] = React.useState<number | null>(null);
 
-    // Окремо тягнемо тривалість для рядка метаданих (не залежить від плеєра).
     React.useEffect(() => {
       if (!unsafeUrl) return;
       const audio = new Audio();

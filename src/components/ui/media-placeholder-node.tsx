@@ -116,7 +116,6 @@ export const PlaceholderElement = withHOC(
         const isResizableMedia =
           element.mediaType === KEYS.img || element.mediaType === KEYS.video;
 
-        // Зберігаємо імʼя/розмір/тип для всіх медіа (audio та file їх показують).
         const keepMeta =
           element.mediaType === KEYS.file || element.mediaType === KEYS.audio;
 

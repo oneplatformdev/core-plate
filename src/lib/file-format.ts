@@ -1,8 +1,5 @@
-/** Утиліти форматування для медіа-нод (audio / file). */
-
 const SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'];
 
-/** "5.2 MB", "812 KB". 0/undefined → null (нічого не показуємо). */
 export function formatBytes(bytes?: number | null, decimals = 1): string | null {
   if (bytes == null || Number.isNaN(bytes) || bytes <= 0) return null;
 
@@ -11,13 +8,11 @@ export function formatBytes(bytes?: number | null, decimals = 1): string | null 
     Math.floor(Math.log(bytes) / Math.log(1024))
   );
   const value = bytes / 1024 ** i;
-  // Байти — без дробу.
   const fixed = i === 0 ? 0 : decimals;
 
   return `${value.toFixed(fixed)} ${SIZE_UNITS[i]}`;
 }
 
-/** Секунди → "m:ss" (наприклад 0:45, 4:20). */
 export function formatTime(seconds?: number | null): string {
   if (seconds == null || Number.isNaN(seconds) || !Number.isFinite(seconds)) {
     return '0:00';
@@ -29,7 +24,6 @@ export function formatTime(seconds?: number | null): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-/** Тривалість у людському вигляді: "4 min 35 sec", "45 sec". */
 export function formatDuration(seconds?: number | null): string | null {
   if (seconds == null || Number.isNaN(seconds) || !Number.isFinite(seconds)) {
     return null;
@@ -42,7 +36,6 @@ export function formatDuration(seconds?: number | null): string | null {
   return `${mins} min ${secs.toString().padStart(2, '0')} sec`;
 }
 
-/** Розширення файлу в нижньому регістрі ("lecture.PDF" → "pdf"). */
 export function getFileExtension(name?: string | null): string {
   if (!name) return '';
   const clean = name.split(/[?#]/)[0];
