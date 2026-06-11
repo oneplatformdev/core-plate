@@ -116,12 +116,17 @@ export const PlaceholderElement = withHOC(
         const isResizableMedia =
           element.mediaType === KEYS.img || element.mediaType === KEYS.video;
 
+        const keepMeta =
+          element.mediaType === KEYS.file || element.mediaType === KEYS.audio;
+
         const node = {
           children: [{ text: '' }],
           initialHeight: imageRef.current?.height,
           initialWidth: imageRef.current?.width,
           isUpload: true,
-          name: element.mediaType === KEYS.file ? uploadedFile.name : '',
+          name: keepMeta ? uploadedFile.name : '',
+          mimeType: uploadedFile.type,
+          size: uploadedFile.size,
           placeholderId: element.id as string,
           type: element.mediaType!,
           url: uploadedFile.url,

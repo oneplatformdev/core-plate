@@ -147,6 +147,7 @@ export function FixedToolbarButtons() {
       { group: 'links', key: 'emoji', render: () => <EmojiToolbarButton /> },
       { group: 'media', key: 'img', render: () => <MediaToolbarButton nodeType={KEYS.img} /> },
       { group: 'media', key: 'video', render: () => <MediaToolbarButton nodeType={KEYS.video} /> },
+      { group: 'media', key: 'audio', render: () => <MediaToolbarButton nodeType={KEYS.audio} /> },
       { group: 'media', key: 'file', render: () => <MediaToolbarButton nodeType={KEYS.file} /> },
       { group: 'indent', key: 'line-height', render: () => <LineHeightToolbarButton /> },
       { group: 'indent', key: 'outdent', render: () => <OutdentToolbarButton /> },
