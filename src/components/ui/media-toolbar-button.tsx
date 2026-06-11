@@ -130,6 +130,7 @@ export function MediaToolbarButton({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
+            className="min-w-[136px]"
             onClick={(e) => e.stopPropagation()}
             align={inOverflowMenu ? 'end' : 'start'}
             alignOffset={inOverflowMenu ? 0 : -32}

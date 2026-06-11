@@ -27,7 +27,7 @@ export function AudioElementStatic(props: SlateElementProps<TAudioElement>) {
             {NodeApi.string(caption[0])}
           </div>
         )}
-        <AudioPlayer url={url} />
+        <AudioPlayer url={url} downloadName={name} />
         <MediaMeta
           className="mt-2"
           parts={[name || undefined, formatBytes(size)]}

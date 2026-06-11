@@ -7,7 +7,7 @@ import type { PlateElementProps } from 'platejs/react';
 
 import { useMediaState } from '@platejs/media/react';
 import { ResizableProvider } from '@platejs/resizable';
-import { Trash2Icon } from 'lucide-react';
+import { DownloadIcon, Trash2Icon } from 'lucide-react';
 import {
   PlateElement,
   useReadOnly,
@@ -68,6 +68,17 @@ export const FileElement = withHOC(
               parts={[fileName, formatBytes(element.size)]}
             />
           </div>
+
+          <a
+            href={unsafeUrl}
+            download={fileName}
+            rel="noopener noreferrer"
+            target="_blank"
+            className="flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+            aria-label={fileName}
+          >
+            <DownloadIcon className="size-5" />
+          </a>
 
           {!readOnly && (
             <button

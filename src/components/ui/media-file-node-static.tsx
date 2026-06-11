@@ -3,6 +3,7 @@ import * as React from 'react';
 import type { TCaptionProps, TFileElement } from 'platejs';
 import type { SlateElementProps } from 'platejs/static';
 
+import { DownloadIcon } from 'lucide-react';
 import { NodeApi } from 'platejs';
 import { SlateElement } from 'platejs/static';
 
@@ -39,6 +40,17 @@ export function FileElementStatic(props: SlateElementProps<TFileElement>) {
           )}
           <MediaMeta className="mt-1" parts={[name, formatBytes(size)]} />
         </div>
+
+        <a
+          href={url}
+          download={name}
+          rel="noopener noreferrer"
+          target="_blank"
+          className="flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={name}
+        >
+          <DownloadIcon className="size-5" />
+        </a>
       </div>
       {props.children}
     </SlateElement>

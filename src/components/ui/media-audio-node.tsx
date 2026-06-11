@@ -7,7 +7,7 @@ import type { PlateElementProps } from 'platejs/react';
 
 import { useMediaState } from '@platejs/media/react';
 import { ResizableProvider } from '@platejs/resizable';
-import { PauseIcon, PlayIcon, Trash2Icon } from 'lucide-react';
+import { DownloadIcon, PauseIcon, PlayIcon, Trash2Icon } from 'lucide-react';
 import {
   PlateElement,
   useReadOnly,
@@ -29,9 +29,11 @@ type TAudioElementWithMeta = TAudioElement & {
 export function AudioPlayer({
   url,
   className,
+  downloadName,
 }: {
   url?: string;
   className?: string;
+  downloadName?: string;
 }) {
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = React.useState(false);
@@ -57,6 +59,10 @@ export function AudioPlayer({
   }, []);
 
   const progress = duration > 0 ? (current / duration) * 100 : 0;
+  // The thumb is 12px wide and its centre travels within (track − 12px), so a
+  // plain `progress%` fill drifts ±6px from the thumb. Offset by half the thumb
+  // width so the listened track lines up with the thumb centre.
+  const progressFill = `calc(${progress}% + ${6 - (progress * 12) / 100}px)`;
 
   return (
     <div className={cn('flex items-center gap-3', className)}>
@@ -97,7 +103,7 @@ export function AudioPlayer({
           onChange={onSeek}
           className="op-audio-range h-1 w-full cursor-pointer appearance-none rounded-full outline-none"
           style={{
-            background: `linear-gradient(to right, var(--foreground) 0%, var(--foreground) ${progress}%, var(--muted) ${progress}%, var(--muted) 100%)`,
+            background: `linear-gradient(to right, var(--foreground) 0%, var(--foreground) ${progressFill}, var(--muted) ${progressFill}, var(--muted) 100%)`,
           }}
         />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -105,6 +111,19 @@ export function AudioPlayer({
           <span>{formatTime(duration)}</span>
         </div>
       </div>
+
+      {url && (
+        <a
+          href={url}
+          download={downloadName}
+          rel="noopener noreferrer"
+          target="_blank"
+          className="flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+          aria-label="Download"
+        >
+          <DownloadIcon className="size-5" />
+        </a>
+      )}
     </div>
   );
 }
@@ -186,7 +205,7 @@ export const AudioElement = withHOC(
             />
           </Caption>
 
-          <AudioPlayer url={unsafeUrl} />
+          <AudioPlayer url={unsafeUrl} downloadName={element.name} />
 
           <MediaMeta
             className="mt-2"
