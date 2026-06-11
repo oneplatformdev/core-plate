@@ -119,7 +119,8 @@ export function AudioPlayer({
           download={downloadName}
           rel="noopener noreferrer"
           target="_blank"
-          className="flex size-8 shrink-0 items-center justify-center text-[#9368ff] transition-opacity hover:opacity-80"
+          className="flex size-8 shrink-0 items-center justify-center transition-opacity hover:opacity-80"
+          style={{ color: '#9368ff' }}
           aria-label="Download"
         >
           <DownloadIcon className="size-5" />
