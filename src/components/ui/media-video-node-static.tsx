@@ -10,6 +10,8 @@ export function VideoElementStatic(
   props: SlateElementProps<TVideoElement & TCaptionElement & TResizableProps>
 ) {
   const { align = 'center', caption, url, width } = props.element;
+  const posterPath = (props.element as { poster_path?: string | null })
+    .poster_path;
 
   return (
     <SlateElement className="py-2.5" {...props}>
@@ -21,6 +23,7 @@ export function VideoElementStatic(
           <video
             className="w-full max-w-full rounded-sm bg-black object-contain px-0"
             src={url}
+            poster={posterPath ?? undefined}
             controls
           />
           {caption && <figcaption>{NodeApi.string(caption[0])}</figcaption>}

@@ -42,6 +42,8 @@ export const VideoElement = withHOC(
       urlParsers: [parseTwitterUrl, parseVideoUrl],
     });
     const width = useResizableValue('width');
+    const posterPath = (props.element as { poster_path?: string | null })
+      .poster_path;
 
     const isEditorMounted = useEditorMounted();
     const shouldRenderEmbedPlayer =
@@ -108,6 +110,7 @@ export const VideoElement = withHOC(
                   <video
                     className="w-full max-w-full rounded-sm bg-black object-contain px-0"
                     src={unsafeUrl}
+                    poster={posterPath ?? undefined}
                     controls
                   />
                 </div>

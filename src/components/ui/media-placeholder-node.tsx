@@ -130,6 +130,9 @@ export const PlaceholderElement = withHOC(
           placeholderId: element.id as string,
           type: element.mediaType!,
           url: uploadedFile.url,
+          ...(element.mediaType === KEYS.video
+            ? { poster_path: uploadedFile.posterPath ?? null }
+            : {}),
           ...(isResizableMedia ? { width: 'calc(100% - 80px)' } : {}),
         };
 
