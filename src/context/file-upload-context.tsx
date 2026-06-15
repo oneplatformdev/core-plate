@@ -13,6 +13,7 @@ export type UploadResultLike = {
   name?: string;
   originalUrl?: string;
   path?: string;
+  posterPath?: string | null;
   size?: number;
   smallUrl?: string;
   thumbUrl?: string;

@@ -6,7 +6,9 @@ import { usePlateI18n } from '@/i18n/provider';
 
 import { z } from 'zod';
 
-export type UploadedFile<T = unknown> = ClientUploadedFileData<T>;
+export type UploadedFile<T = unknown> = ClientUploadedFileData<T> & {
+  posterPath?: string | null;
+};
 
 interface UseUploadFileProps {
   onUploadComplete?: (file: UploadedFile) => void;
@@ -56,6 +58,7 @@ export function useUploadFile({
         fileHash: '',
         key: uploaded.key ?? uploaded.name ?? file.name,
         name: uploaded.name ?? file.name,
+        posterPath: uploaded.posterPath ?? null,
         serverData: undefined,
         size: uploaded.size ?? file.size,
         type: uploaded.type ?? file.type,
