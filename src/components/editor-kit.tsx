@@ -9,6 +9,7 @@ import { BasicBlocksKit } from '@/components/basic-blocks-kit';
 import { BasicMarksKit } from '@/components/basic-marks-kit';
 import { createBlockPlaceholderKit } from '@/components/block-placeholder-kit';
 import { CalloutKit } from '@/components/callout-kit';
+import { createCharCounterKit } from '@/components/char-counter-kit';
 import { CodeBlockKit } from '@/components/code-block-kit';
 import { ColumnKit } from '@/components/column-kit';
 import { DateKit } from '@/components/date-kit';
@@ -32,7 +33,16 @@ import { TableKit } from '@/components/table-kit';
 import { TocKit } from '@/components/toc-kit';
 import { ToggleKit } from '@/components/toggle-kit';
 
-export const createEditorKit = (placeholder?: string) => [
+export type CreateEditorKitOptions = {
+  /** When set, the editor shows a `count / maxLength` counter and hard-blocks
+   *  input (typing, breaks, paste) once the limit is reached. */
+  maxLength?: number;
+};
+
+export const createEditorKit = (
+  placeholder?: string,
+  options?: CreateEditorKitOptions
+) => [
   // Elements
   ...BasicBlocksKit,
   ...CodeBlockKit,
@@ -74,6 +84,7 @@ export const createEditorKit = (placeholder?: string) => [
 
   // UI
   ...createBlockPlaceholderKit(placeholder),
+  ...createCharCounterKit(options?.maxLength),
   ...FixedToolbarKit,
 ];
 

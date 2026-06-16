@@ -153,6 +153,8 @@ export const defaultPlateMessages = {
   editTable: 'Editing table',
   viewTable: 'Table view',
   escToClose: 'Press Esc to close',
+  charCounterHint:
+    'The counter shows the number of typed characters: visible text plus line breaks between blocks. Formatting tags and images are not counted.',
 } as const;
 
 export type PlateMessageKey = keyof typeof defaultPlateMessages;
@@ -313,6 +315,8 @@ export const ukPlateMessages: Record<PlateMessageKey, string> = {
   editTable: 'Редагування таблиці',
   viewTable: 'Перегляд таблиці',
   escToClose: 'Натисніть Esc, щоб закрити',
+  charCounterHint:
+    'Лічильник показує кількість введених символів: видимий текст разом із переносами рядків між блоками. Теги форматування та зображення не враховуються.',
 };
 
 
