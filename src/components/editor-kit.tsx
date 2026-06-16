@@ -9,10 +9,7 @@ import { BasicBlocksKit } from '@/components/basic-blocks-kit';
 import { BasicMarksKit } from '@/components/basic-marks-kit';
 import { createBlockPlaceholderKit } from '@/components/block-placeholder-kit';
 import { CalloutKit } from '@/components/callout-kit';
-import {
-  createCharCounterKit,
-  type CharCounterRender,
-} from '@/components/char-counter-kit';
+import { type CharCounterRender } from '@/components/char-counter-kit';
 import { CodeBlockKit } from '@/components/code-block-kit';
 import { ColumnKit } from '@/components/column-kit';
 import { DateKit } from '@/components/date-kit';
@@ -48,7 +45,8 @@ export type CreateEditorKitOptions = {
 
 export const createEditorKit = (
   placeholder?: string,
-  options?: CreateEditorKitOptions
+  // Accepted for backward compat; counter is disabled so it's currently unused.
+  _options?: CreateEditorKitOptions
 ) => [
   // Elements
   ...BasicBlocksKit,
@@ -91,7 +89,9 @@ export const createEditorKit = (
 
   // UI
   ...createBlockPlaceholderKit(placeholder),
-  ...createCharCounterKit(options?.maxLength, options?.renderCounter),
+  // Char counter disabled per product decision — kept out of the kit. The
+  // `maxLength` / `renderCounter` options are still accepted (no-op) so
+  // consumers passing them don't break.
   ...FixedToolbarKit,
 ];
 
