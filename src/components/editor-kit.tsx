@@ -9,7 +9,10 @@ import { BasicBlocksKit } from '@/components/basic-blocks-kit';
 import { BasicMarksKit } from '@/components/basic-marks-kit';
 import { createBlockPlaceholderKit } from '@/components/block-placeholder-kit';
 import { CalloutKit } from '@/components/callout-kit';
-import { createCharCounterKit } from '@/components/char-counter-kit';
+import {
+  createCharCounterKit,
+  type CharCounterRender,
+} from '@/components/char-counter-kit';
 import { CodeBlockKit } from '@/components/code-block-kit';
 import { ColumnKit } from '@/components/column-kit';
 import { DateKit } from '@/components/date-kit';
@@ -37,6 +40,10 @@ export type CreateEditorKitOptions = {
   /** When set, the editor shows a `count / maxLength` counter and hard-blocks
    *  input (typing, breaks, paste) once the limit is reached. */
   maxLength?: number;
+  /** Custom counter renderer. When provided, the plugin renders this node
+   *  instead of the built-in counter UI — the consumer owns markup, position
+   *  and tooltip, and receives the live `{ count, maxLength, over }`. */
+  renderCounter?: CharCounterRender;
 };
 
 export const createEditorKit = (
@@ -84,7 +91,7 @@ export const createEditorKit = (
 
   // UI
   ...createBlockPlaceholderKit(placeholder),
-  ...createCharCounterKit(options?.maxLength),
+  ...createCharCounterKit(options?.maxLength, options?.renderCounter),
   ...FixedToolbarKit,
 ];
 

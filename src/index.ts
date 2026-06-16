@@ -2,7 +2,16 @@ import './index.css';
 
 export { PlateEditor, type PlateEditorProps } from '@/components/core-plate-editor';
 export { StaticEditor, type StaticEditorProps } from '@/components/core-plate-static-editor';
-export { createEditorKit, EditorKit, useEditor } from '@/components/editor-kit';
+export {
+  createEditorKit,
+  EditorKit,
+  useEditor,
+  type CreateEditorKitOptions,
+} from '@/components/editor-kit';
+export type {
+  CharCounterRender,
+  CharCounterRenderProps,
+} from '@/components/char-counter-kit';
 export type { EditorValue } from '@/components/plate-types';
 export { Editor, EditorContainer, EditorView, type EditorProps } from '@/components/ui/editor';
 export { FixedToolbar } from '@/components/ui/fixed-toolbar';

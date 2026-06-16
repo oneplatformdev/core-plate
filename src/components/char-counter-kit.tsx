@@ -71,14 +71,37 @@ const truncateNodes = (
 
 // --- UI --------------------------------------------------------------------
 
-function CharCounter({ maxLength }: { maxLength?: number }) {
+// Live counting state passed to a consumer-supplied renderer. Lets the host
+// app provide its own counter + tooltip markup/positioning while the plugin
+// keeps owning the counting and limit-enforcement logic.
+export type CharCounterRenderProps = {
+  count: number;
+  maxLength?: number;
+  over: boolean;
+};
+
+export type CharCounterRender = (
+  props: CharCounterRenderProps
+) => React.ReactNode;
+
+function CharCounter({
+  maxLength,
+  render,
+}: {
+  maxLength?: number;
+  render?: CharCounterRender;
+}) {
   const { t } = usePlateI18n();
   const count = useEditorSelector((editor) => countChars(editor.children), []);
 
   const over = typeof maxLength === 'number' && count > maxLength;
 
+  // Consumer owns everything (markup, position, tooltip) — we just feed it the
+  // live numbers.
+  if (render) return <>{render({ count, maxLength, over })}</>;
+
   return (
-    <div className="op-plate-scope pointer-events-none sticky bottom-0 z-10 flex justify-end px-3 pb-2">
+    <div className="op-plate-scope pointer-events-none absolute bottom-0 right-0 z-10 flex justify-end px-3 pb-2">
       <div className="pointer-events-auto flex items-center gap-1 rounded-md bg-[#FCFCFC]/90 px-2 py-0.5 text-xs backdrop-blur-sm">
         <span
           className={cn(
@@ -107,11 +130,16 @@ function CharCounter({ maxLength }: { maxLength?: number }) {
 
 // --- Plugin ----------------------------------------------------------------
 
-export const createCharCounterKit = (maxLength?: number) => {
+export const createCharCounterKit = (
+  maxLength?: number,
+  renderCounter?: CharCounterRender
+) => {
   const CharCounterPlugin = createPlatePlugin({
     key: 'charCounter',
     render: {
-      afterEditable: () => <CharCounter maxLength={maxLength} />,
+      afterEditable: () => (
+        <CharCounter maxLength={maxLength} render={renderCounter} />
+      ),
     },
   }).overrideEditor(
     ({ editor, tf: { insertText, insertBreak, insertFragment } }) => ({

@@ -44,7 +44,27 @@ type FeedSplitEditorProps = {
 export function FeedSplitEditor({ value, onChangeValues }: FeedSplitEditorProps) {
   const messages = ukPlateMessages ?? defaultPlateMessages;
   const plugins = useMemo(
-    () => createEditorKit(messages.typeSomethingPlaceholder).filter((p: any) => p.key !== 'fixed-toolbar'),
+    () =>
+      createEditorKit(messages.typeSomethingPlaceholder, {
+        maxLength: 2500,
+        // Sandbox demo of a consumer-supplied counter + tooltip. The plugin
+        // owns counting/limit; this owns markup, position and tooltip.
+        renderCounter: ({ count, maxLength, over }) => (
+          <div
+            className="op-plate-scope pointer-events-none absolute bottom-2 right-3 z-10 flex items-center gap-1 rounded-md bg-white/90 px-2 py-0.5 text-xs shadow-sm backdrop-blur-sm"
+          >
+            <span className={over ? 'font-semibold text-red-500' : 'text-gray-500'}>
+              {count} / {maxLength}
+            </span>
+            <span
+              title="Demo tooltip: лічильник рахує видимий текст + переноси між блоками"
+              className="pointer-events-auto flex size-4 cursor-help items-center justify-center rounded-full border border-current text-[10px] text-gray-500"
+            >
+              ?
+            </span>
+          </div>
+        ),
+      }).filter((p: any) => p.key !== 'fixed-toolbar'),
     [messages.typeSomethingPlaceholder]
   );
 
