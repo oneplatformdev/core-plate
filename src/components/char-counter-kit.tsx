@@ -111,15 +111,15 @@ export type CharCounterRender = (
   props: CharCounterRenderProps
 ) => React.ReactNode;
 
-function CharCounter({
-  maxLength,
-  render,
-}: {
-  maxLength?: number;
-  render?: CharCounterRender;
-}) {
+function CharCounter() {
   const { t } = usePlateI18n();
   const count = useEditorSelector((editor) => countChars(editor.children), []);
+  // Config is read from module-level state set by `createCharCounterKit`.
+  // Plate registers a plugin's render component globally by key, so neither a
+  // closure nor per-editor plugin options reliably reach this render — module
+  // state is the pragmatic source of truth. Single editor per page in practice.
+  const maxLength = activeMaxLength;
+  const render = activeRenderCounter;
 
   const over = typeof maxLength === 'number' && count > maxLength;
 
@@ -166,21 +166,25 @@ function CharCounter({
 
 // --- Plugin ----------------------------------------------------------------
 
-export const createCharCounterKit = (
-  maxLength?: number,
-  renderCounter?: CharCounterRender
-) => {
-  const CharCounterPlugin = createPlatePlugin({
-    key: 'charCounter',
-    render: {
-      afterEditable: () => (
-        <CharCounter maxLength={maxLength} render={renderCounter} />
-      ),
-    },
-  }).overrideEditor(
-    ({ editor, tf: { insertText, insertBreak, insertFragment } }) => ({
+// Module-level config, set by `createCharCounterKit`. See CharCounter for why
+// this isn't a closure / plugin option.
+let activeMaxLength: number | undefined;
+let activeRenderCounter: CharCounterRender | undefined;
+
+const getMax = () => activeMaxLength;
+
+// Single shared plugin (its render is registered globally by key anyway).
+export const CharCounterPlugin = createPlatePlugin({
+  key: 'charCounter',
+  render: {
+    afterEditable: () => <CharCounter />,
+  },
+}).overrideEditor(
+  ({ editor, tf: { insertText, insertBreak, insertFragment } }) => {
+    return {
       transforms: {
         insertText(text: string, options?: unknown) {
+          const maxLength = getMax();
           if (typeof maxLength !== 'number') {
             return (insertText as (t: string, o?: unknown) => void)(text, options);
           }
@@ -191,6 +195,7 @@ export const createCharCounterKit = (
         },
         insertBreak() {
           // A block break adds one counted character (the line break).
+          const maxLength = getMax();
           if (
             typeof maxLength === 'number' &&
             countChars(editor.children) >= maxLength
@@ -200,6 +205,7 @@ export const createCharCounterKit = (
           (insertBreak as () => void)();
         },
         insertFragment(fragment: unknown[], options?: unknown) {
+          const maxLength = getMax();
           if (typeof maxLength !== 'number') {
             return (insertFragment as (f: unknown[], o?: unknown) => void)(
               fragment,
@@ -223,9 +229,19 @@ export const createCharCounterKit = (
           (insertFragment as (f: unknown[], o?: unknown) => void)(nodes, options);
         },
       },
-    })
-  );
+    };
+  }
+);
 
+export const createCharCounterKit = (
+  maxLength?: number,
+  renderCounter?: CharCounterRender
+) => {
+  // Only overwrite with real values. The module-level default
+  // `createCharCounterKit()` (and HMR re-eval) pass `undefined`; ignoring those
+  // keeps a configured editor's limit from being clobbered.
+  if (maxLength !== undefined) activeMaxLength = maxLength;
+  if (renderCounter !== undefined) activeRenderCounter = renderCounter;
   return [CharCounterPlugin];
 };
 
