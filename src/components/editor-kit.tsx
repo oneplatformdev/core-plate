@@ -9,6 +9,7 @@ import { BasicBlocksKit } from '@/components/basic-blocks-kit';
 import { BasicMarksKit } from '@/components/basic-marks-kit';
 import { createBlockPlaceholderKit } from '@/components/block-placeholder-kit';
 import { CalloutKit } from '@/components/callout-kit';
+import { type CharCounterRender } from '@/components/char-counter-kit';
 import { CodeBlockKit } from '@/components/code-block-kit';
 import { ColumnKit } from '@/components/column-kit';
 import { DateKit } from '@/components/date-kit';
@@ -32,7 +33,21 @@ import { TableKit } from '@/components/table-kit';
 import { TocKit } from '@/components/toc-kit';
 import { ToggleKit } from '@/components/toggle-kit';
 
-export const createEditorKit = (placeholder?: string) => [
+export type CreateEditorKitOptions = {
+  /** When set, the editor shows a `count / maxLength` counter and hard-blocks
+   *  input (typing, breaks, paste) once the limit is reached. */
+  maxLength?: number;
+  /** Custom counter renderer. When provided, the plugin renders this node
+   *  instead of the built-in counter UI — the consumer owns markup, position
+   *  and tooltip, and receives the live `{ count, maxLength, over }`. */
+  renderCounter?: CharCounterRender;
+};
+
+export const createEditorKit = (
+  placeholder?: string,
+  // Accepted for backward compat; counter is disabled so it's currently unused.
+  _options?: CreateEditorKitOptions
+) => [
   // Elements
   ...BasicBlocksKit,
   ...CodeBlockKit,
@@ -74,6 +89,9 @@ export const createEditorKit = (placeholder?: string) => [
 
   // UI
   ...createBlockPlaceholderKit(placeholder),
+  // Char counter disabled per product decision — kept out of the kit. The
+  // `maxLength` / `renderCounter` options are still accepted (no-op) so
+  // consumers passing them don't break.
   ...FixedToolbarKit,
 ];
 

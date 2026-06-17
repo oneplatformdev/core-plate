@@ -22,6 +22,40 @@ const TRAILING_PUNCTUATION = /[.,;:!?)\]}>'"`*_~]+$/;
 const normalizeUrl = (raw: string) =>
   /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 
+// --- Media URL detection ---------------------------------------------------
+// A bare URL pasted on its own should become a media block when it clearly
+// points at a media file, instead of a plain link. Detection is by file
+// extension (+ known video hosts) — reliable and synchronous. URLs without a
+// recognizable extension fall through to the normal link behavior.
+const IMAGE_URL_EXT = /\.(jpe?g|png|gif|webp|svg|bmp|avif|ico|heic|heif)(\?.*)?(#.*)?$/i;
+const VIDEO_URL_EXT = /\.(mp4|webm|ogv|mov|m4v|avi|mkv)(\?.*)?(#.*)?$/i;
+const AUDIO_URL_EXT = /\.(mp3|wav|ogg|oga|m4a|flac|aac|opus|weba)(\?.*)?(#.*)?$/i;
+const FILE_URL_EXT =
+  /\.(pdf|docx?|xlsx?|pptx?|txt|csv|zip|rar|7z|json|xml|rtf|odt|ods|odp|epub)(\?.*)?(#.*)?$/i;
+const VIDEO_EMBED_HOST =
+  /(?:youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com|loom\.com)/i;
+
+const classifyMediaUrl = (url: string): string | null => {
+  if (IMAGE_URL_EXT.test(url)) return KEYS.img;
+  if (VIDEO_EMBED_HOST.test(url)) return KEYS.mediaEmbed;
+  if (VIDEO_URL_EXT.test(url)) return KEYS.video;
+  if (AUDIO_URL_EXT.test(url)) return KEYS.audio;
+  if (FILE_URL_EXT.test(url)) return KEYS.file;
+  return null;
+};
+
+const insertMediaFromUrl = (editor: AnyEditor, url: string, type: string) => {
+  const isResizable =
+    type === KEYS.img || type === KEYS.video || type === KEYS.mediaEmbed;
+  editor.tf.insertNodes({
+    children: [{ text: '' }],
+    name: type === KEYS.file ? url.split('/').pop() : undefined,
+    type,
+    url,
+    ...(isResizable ? { width: 'calc(100% - 80px)' } : {}),
+  });
+};
+
 const stripTrailingPunctuation = (url: string) => {
   let cleaned = url.replace(TRAILING_PUNCTUATION, '');
   const opens = (cleaned.match(/\(/g) || []).length;
@@ -163,6 +197,23 @@ export const LinkKit = [
               (hit) => hit.offset === 0 && hit.length === trimmedPlain.length,
             );
           URL_IN_TEXT_REGEX.lastIndex = 0;
+
+          // Starred behavior: a bare URL pointing at a media file becomes the
+          // matching media block (image / video / audio / file / embed) instead
+          // of a link. Non-media URLs fall through to the link logic below.
+          if (wholeIsUrl) {
+            const mediaUrl = normalizeUrl(stripTrailingPunctuation(trimmedPlain));
+            const mediaType = classifyMediaUrl(mediaUrl);
+            if (mediaType) {
+              editor.tf.withoutNormalizing(() => {
+                if (editor.selection && RangeApi.isExpanded(editor.selection)) {
+                  editor.tf.delete();
+                }
+                insertMediaFromUrl(editor as AnyEditor, mediaUrl, mediaType);
+              });
+              return;
+            }
+          }
 
           if (
             wholeIsUrl &&

@@ -44,7 +44,10 @@ type FeedSplitEditorProps = {
 export function FeedSplitEditor({ value, onChangeValues }: FeedSplitEditorProps) {
   const messages = ukPlateMessages ?? defaultPlateMessages;
   const plugins = useMemo(
-    () => createEditorKit(messages.typeSomethingPlaceholder).filter((p: any) => p.key !== 'fixed-toolbar'),
+    () =>
+      createEditorKit(messages.typeSomethingPlaceholder, {
+        maxLength: 2500,
+      }).filter((p: any) => p.key !== 'fixed-toolbar'),
     [messages.typeSomethingPlaceholder]
   );
 
