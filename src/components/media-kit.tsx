@@ -30,6 +30,11 @@ const MediaEmbedElementLazy = React.lazy(() =>
   }))
 );
 
+// Allow dropping/selecting several media files at once. Each file still uploads
+// individually via its own placeholder; a per-type count of 1 made any
+// multi-file drop fail validation (TOO_MANY_FILES → "Помилка завантаження файлу").
+const MEDIA_MAX_FILE_COUNT = 20;
+
 function MediaEmbedElement(props: PlateElementProps<TMediaEmbedElement>) {
   return (
     <React.Suspense fallback={null}>
@@ -54,32 +59,32 @@ export const MediaKit = [
       uploadConfig: {
         audio: {
           mediaType: KEYS.audio,
-          maxFileCount: 1,
+          maxFileCount: MEDIA_MAX_FILE_COUNT,
           maxFileSize: '128MB',
         },
         blob: {
           mediaType: KEYS.file,
-          maxFileCount: 1,
+          maxFileCount: MEDIA_MAX_FILE_COUNT,
           maxFileSize: '128MB',
         },
         pdf: {
           mediaType: KEYS.file,
-          maxFileCount: 1,
+          maxFileCount: MEDIA_MAX_FILE_COUNT,
           maxFileSize: '128MB',
         },
         text: {
           mediaType: KEYS.file,
-          maxFileCount: 1,
+          maxFileCount: MEDIA_MAX_FILE_COUNT,
           maxFileSize: '128MB',
         },
         video: {
           mediaType: KEYS.video,
-          maxFileCount: 1,
+          maxFileCount: MEDIA_MAX_FILE_COUNT,
           maxFileSize: '128MB',
         },
         image: {
           mediaType: KEYS.img,
-          maxFileCount: 1,
+          maxFileCount: MEDIA_MAX_FILE_COUNT,
           maxFileSize: '128MB',
         },
       },
