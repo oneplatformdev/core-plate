@@ -99,6 +99,7 @@ export function SandboxHome({
           key={mode}
           initialValue={editorValue}
           locale={locale}
+          maxLength={2500}
           readOnly={mode === 'readonly'}
           onChangeDebounceMs={0}
           onChangeValues={setEditorValue}
