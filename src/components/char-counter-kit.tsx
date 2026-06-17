@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { RangeApi } from 'platejs';
 import { createPlatePlugin, useEditorSelector } from 'platejs/react';
 
 import { Tooltip as TooltipPrimitive } from 'radix-ui';
@@ -28,24 +29,100 @@ const nodeText = (node: unknown): string => {
   return '';
 };
 
-// One '\n' per top-level block boundary mirrors how the document reads.
-export const countChars = (value: unknown): number => {
-  if (!Array.isArray(value)) return 0;
-  return value.map(nodeText).join('\n').length;
+// Top-level block types that are structural/atomic (no "line" semantics). They
+// don't count toward block-break separators: Slate wraps tables/media with empty
+// paragraphs, so an inserted (empty) table must not inflate the count via its
+// borders. Their inner visible text (e.g. table cell text) still counts.
+const STRUCTURAL_BLOCK_TYPES = new Set([
+  'table',
+  'img',
+  'image',
+  'video',
+  'audio',
+  'file',
+  'media_embed',
+  'mediaEmbed',
+  'hr',
+  'horizontal_rule',
+]);
+
+const isStructuralBlock = (node: unknown): boolean => {
+  const type = (node as { type?: unknown } | null)?.type;
+  return typeof type === 'string' && STRUCTURAL_BLOCK_TYPES.has(type);
 };
 
-// Trim a fragment so its text content fits within `budget` characters while
-// preserving block/inline structure up to the cut point. Used to clamp paste
-// when only part of the pasted content fits under the limit.
+// Each indentation level (Tab) is one character. `indent` is a numeric prop on
+// block nodes; sum it across the whole tree.
+const sumIndent = (nodes: unknown[]): number => {
+  let total = 0;
+  for (const node of nodes) {
+    if (!node || typeof node !== 'object') continue;
+    const n = node as { indent?: unknown; children?: unknown[] };
+    if (typeof n.indent === 'number' && n.indent > 0) total += n.indent;
+    if (Array.isArray(n.children)) total += sumIndent(n.children);
+  }
+  return total;
+};
+
+// Counted "characters" = visible text (soft breaks from Shift+Enter are literal
+// "\n" already inside text, so they count as 1) + one per hard block break
+// (Enter) between non-structural blocks + one per indentation level.
+export const countChars = (value: unknown): number => {
+  if (!Array.isArray(value)) return 0;
+
+  let total = 0;
+  for (let i = 0; i < value.length; i++) {
+    const block = value[i];
+    total += nodeText(block).length;
+    // Block break (Enter) counts, except where a structural/void block (table,
+    // media) sits on either side of the boundary.
+    if (
+      i > 0 &&
+      !isStructuralBlock(block) &&
+      !isStructuralBlock(value[i - 1])
+    ) {
+      total += 1;
+    }
+  }
+  total += sumIndent(value);
+  return total;
+};
+
+// Trim a fragment so its *counted* length fits within `budget`, preserving
+// block/inline structure up to the cut point. The accounting mirrors
+// `countChars` — text length, one separator per top-level block boundary, and
+// indent levels — so a truncated multi-block paste never overshoots the limit
+// (otherwise the uncounted block breaks pushed the total past max, e.g. 2502).
 const truncateNodes = (
   nodes: unknown[],
-  budget: number
+  budget: number,
+  topLevel = false
 ): { nodes: unknown[]; used: number } => {
   const out: unknown[] = [];
   let used = 0;
 
-  for (const node of nodes) {
+  for (let i = 0; i < nodes.length; i++) {
     if (used >= budget) break;
+    const node = nodes[i];
+
+    // Overhead this node adds beyond its text: a block-break separator (top
+    // level only, between two non-structural blocks) plus its indent levels.
+    let overhead = 0;
+    if (node && typeof node === 'object') {
+      const n = node as SlateNode & { indent?: unknown };
+      if (
+        topLevel &&
+        out.length > 0 &&
+        !isStructuralBlock(node) &&
+        !isStructuralBlock(nodes[i - 1])
+      ) {
+        overhead += 1;
+      }
+      if (typeof n.indent === 'number' && n.indent > 0) overhead += n.indent;
+    }
+    if (used + overhead >= budget) break;
+    used += overhead;
+
     if (!node || typeof node !== 'object') {
       out.push(node);
       continue;
@@ -111,30 +188,41 @@ export type CharCounterRender = (
   props: CharCounterRenderProps
 ) => React.ReactNode;
 
-function CharCounter() {
+export type CharCounterOverlayProps = {
+  /** Hard character limit. When omitted, the overlay renders nothing. */
+  maxLength?: number;
+  /** Custom renderer; receives the live `{ count, maxLength, over }`. */
+  renderCounter?: CharCounterRender;
+};
+
+// Counter UI is rendered explicitly by the host *inside* `<Plate>` (not via the
+// plugin's global `afterEditable` render). Plate registers a plugin render
+// globally by key, so with more than one editor on a page that render resolves
+// to a non-deterministic editor context — which silently dropped the limit.
+// Taking `maxLength` as a direct prop here makes it deterministic and per-editor.
+export function CharCounterOverlay({
+  maxLength,
+  renderCounter: render,
+}: CharCounterOverlayProps) {
   const { t } = usePlateI18n();
   const count = useEditorSelector((editor) => countChars(editor.children), []);
-  // Config is read from module-level state set by `createCharCounterKit`.
-  // Plate registers a plugin's render component globally by key, so neither a
-  // closure nor per-editor plugin options reliably reach this render — module
-  // state is the pragmatic source of truth. Single editor per page in practice.
-  const maxLength = activeMaxLength;
-  const render = activeRenderCounter;
 
-  const over = typeof maxLength === 'number' && count > maxLength;
+  if (typeof maxLength !== 'number') return null;
+
+  const over = count > maxLength;
 
   // Consumer owns everything (markup, position, tooltip) — we just feed it the
   // live numbers.
   if (render) return <>{render({ count, maxLength, over })}</>;
 
   return (
-    <div className="op-plate-scope pointer-events-none absolute bottom-0 left-0 z-10 flex justify-start px-3 pb-2">
-      <div className="pointer-events-auto flex items-center gap-1 rounded-md bg-[#FCFCFC]/90 px-2 py-0.5 backdrop-blur-sm">
+    <div className="op-plate-scope pointer-events-none sticky bottom-0 left-0 z-10 -mt-12 flex justify-start px-3 pb-3">
+      <div className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-[#EEF0F2] bg-white px-2.5 py-1 shadow-[1px_1px_10px_0px_rgba(6,8,13,0.1)]">
         {/* Style mirrors core-web's Input/Textarea counter. */}
         <span
           className={cn(
-            'inline-flex items-center justify-end text-xs font-medium leading-[1.2] tabular-nums',
-            over ? 'text-red-500' : 'text-muted-foreground'
+            'inline-flex items-center justify-end text-sm font-semibold leading-[1.2] tabular-nums',
+            over ? 'text-red-500' : 'text-primary'
           )}
         >
           {typeof maxLength === 'number' ? `${count}/${maxLength}` : count}
@@ -166,21 +254,37 @@ function CharCounter() {
 
 // --- Plugin ----------------------------------------------------------------
 
-// Module-level config, set by `createCharCounterKit`. See CharCounter for why
-// this isn't a closure / plugin option.
-let activeMaxLength: number | undefined;
-let activeRenderCounter: CharCounterRender | undefined;
+type CharCounterOptions = {
+  maxLength?: number;
+  renderCounter?: CharCounterRender;
+};
 
-const getMax = () => activeMaxLength;
-
-// Single shared plugin (its render is registered globally by key anyway).
+// The plugin owns ONLY limit enforcement (input transforms). Its `maxLength`
+// option is read per-editor via `getOption` inside the transforms, which is
+// reliable for the editor the plugin is attached to. The counter *UI* is NOT a
+// plugin render (see CharCounterOverlay) to avoid Plate's global-by-key render
+// resolving to the wrong editor when several editors are mounted.
 export const CharCounterPlugin = createPlatePlugin({
   key: 'charCounter',
-  render: {
-    afterEditable: () => <CharCounter />,
-  },
+  options: { maxLength: undefined, renderCounter: undefined } as CharCounterOptions,
 }).overrideEditor(
-  ({ editor, tf: { insertText, insertBreak, insertFragment } }) => {
+  ({ editor, getOption, tf: { insertText, insertBreak, insertFragment } }) => {
+    const getMax = () => getOption('maxLength');
+    // An expanded selection is replaced by the insert, so its counted length is
+    // freed up. Without this, "select all + paste" is blocked when the editor is
+    // already at the limit, even though the paste would replace everything.
+    const selectionCount = (): number => {
+      const sel = editor.selection;
+      if (!sel || !RangeApi.isExpanded(sel)) return 0;
+      try {
+        const fragment = (
+          editor as { getFragment?: () => unknown[] }
+        ).getFragment?.();
+        return Array.isArray(fragment) ? countChars(fragment) : 0;
+      } catch {
+        return 0;
+      }
+    };
     return {
       transforms: {
         insertText(text: string, options?: unknown) {
@@ -188,7 +292,8 @@ export const CharCounterPlugin = createPlatePlugin({
           if (typeof maxLength !== 'number') {
             return (insertText as (t: string, o?: unknown) => void)(text, options);
           }
-          const remaining = maxLength - countChars(editor.children);
+          const remaining =
+            maxLength - countChars(editor.children) + selectionCount();
           if (remaining <= 0) return;
           const next = text.length > remaining ? text.slice(0, remaining) : text;
           (insertText as (t: string, o?: unknown) => void)(next, options);
@@ -198,7 +303,7 @@ export const CharCounterPlugin = createPlatePlugin({
           const maxLength = getMax();
           if (
             typeof maxLength === 'number' &&
-            countChars(editor.children) >= maxLength
+            countChars(editor.children) - selectionCount() >= maxLength
           ) {
             return;
           }
@@ -212,20 +317,21 @@ export const CharCounterPlugin = createPlatePlugin({
               options
             );
           }
-          const remaining = maxLength - countChars(editor.children);
+          const remaining =
+            maxLength - countChars(editor.children) + selectionCount();
           if (remaining <= 0) return;
 
-          const fragText = Array.isArray(fragment)
-            ? fragment.map(nodeText).join('\n')
-            : '';
-          if (fragText.length <= remaining) {
+          // Exact counted cost of the whole fragment (text + block breaks +
+          // indent). If it fits, insert as-is; otherwise trim with the same
+          // accounting so the result lands at the limit, never above it.
+          if (countChars(fragment) <= remaining) {
             return (insertFragment as (f: unknown[], o?: unknown) => void)(
               fragment,
               options
             );
           }
 
-          const { nodes } = truncateNodes(fragment, remaining);
+          const { nodes } = truncateNodes(fragment, remaining, true);
           (insertFragment as (f: unknown[], o?: unknown) => void)(nodes, options);
         },
       },
@@ -236,13 +342,6 @@ export const CharCounterPlugin = createPlatePlugin({
 export const createCharCounterKit = (
   maxLength?: number,
   renderCounter?: CharCounterRender
-) => {
-  // Only overwrite with real values. The module-level default
-  // `createCharCounterKit()` (and HMR re-eval) pass `undefined`; ignoring those
-  // keeps a configured editor's limit from being clobbered.
-  if (maxLength !== undefined) activeMaxLength = maxLength;
-  if (renderCounter !== undefined) activeRenderCounter = renderCounter;
-  return [CharCounterPlugin];
-};
+) => [CharCounterPlugin.configure({ options: { maxLength, renderCounter } })];
 
 export const CharCounterKit = createCharCounterKit();

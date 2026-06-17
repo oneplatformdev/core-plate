@@ -10,6 +10,10 @@ import { normalizeStaticValue, type Value } from 'platejs';
 import { Plate, usePlateEditor } from 'platejs/react';
 
 import {
+  CharCounterOverlay,
+  type CharCounterRender,
+} from '@/components/char-counter-kit';
+import {
   createEditorKit,
 } from '@/components/editor-kit';
 import { FileUploadContext, type UploadResultLike } from '@/context/file-upload-context';
@@ -54,7 +58,12 @@ export type PlateEditorProps = {
   onUploadValidateError?: (error: UploadError) => void;
   pinToolbarProps?: unknown;
   locale?: 'en' | 'uk';
+  /** Hard character limit. Shows a `count / maxLength` counter and blocks input
+   *  once reached. */
+  maxLength?: number;
   messages?: PlateMessages;
+  /** Custom counter renderer; receives the live `{ count, maxLength, over }`. */
+  renderCounter?: CharCounterRender;
   value?: Value;
 } & Pick<EditorProps, 'autoFocus' | 'placeholder' | 'readOnly'>;
 
@@ -76,7 +85,9 @@ export function PlateEditor({
   placeholder,
   pinToolbarProps,
   locale = 'uk',
+  maxLength,
   messages,
+  renderCounter,
   readOnly,
   value,
 }: PlateEditorProps) {
@@ -117,8 +128,8 @@ export function PlateEditor({
   );
 
   const editorPlugins = React.useMemo(
-    () => createEditorKit(effectivePlaceholder),
-    [effectivePlaceholder]
+    () => createEditorKit(effectivePlaceholder, { maxLength, renderCounter }),
+    [effectivePlaceholder, maxLength, renderCounter]
   );
 
   const editor = usePlateEditor(
@@ -175,6 +186,10 @@ export function PlateEditor({
                     readOnly={readOnly}
                     ref={contentRef}
                     variant={editorVariant}
+                  />
+                  <CharCounterOverlay
+                    maxLength={maxLength}
+                    renderCounter={renderCounter}
                   />
                 </EditorContainer>
 
