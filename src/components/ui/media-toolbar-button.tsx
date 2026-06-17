@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import type { DropdownMenuProps } from '@radix-ui/react-dropdown-menu';
 
-import { PlaceholderPlugin } from '@platejs/media/react';
+import { enqueueMediaFiles } from '@/components/google-docs-paste-kit';
 import {
   AudioLinesIcon,
   FileUpIcon,
@@ -96,7 +96,8 @@ export function MediaToolbarButton({
     accept: currentConfig.accept,
     multiple: true,
     onFilesSelected: ({ plainFiles: updatedFiles }) => {
-      editor.getTransforms(PlaceholderPlugin).insert.media(updatedFiles);
+      // Sequential upload queue (same as drop/paste) instead of all at once.
+      void enqueueMediaFiles(editor, updatedFiles);
     },
   });
 
