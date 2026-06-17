@@ -33,7 +33,7 @@ const MediaEmbedElementLazy = React.lazy(() =>
 // Allow dropping/selecting several media files at once. Each file still uploads
 // individually via its own placeholder; a per-type count of 1 made any
 // multi-file drop fail validation (TOO_MANY_FILES → "Помилка завантаження файлу").
-const MEDIA_MAX_FILE_COUNT = 20;
+const MEDIA_MAX_FILE_COUNT = 100;
 
 function MediaEmbedElement(props: PlateElementProps<TMediaEmbedElement>) {
   return (

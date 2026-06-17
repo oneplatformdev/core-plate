@@ -417,6 +417,87 @@ const waitForPlaceholderRemoved = (
     tick();
   });
 
+// Drop / programmatic entry point: upload a batch of real File objects ONE AT A
+// TIME through the same queue + progress overlay as the Google-Docs paste flow.
+// Mirrors the paste loop but without PUA markers — we already hold the files, so
+// each one is inserted as a placeholder and we wait for it to finish uploading
+// before starting the next. Used by the editor's file-drop handler so dropping
+// e.g. 10 files creates a sequential queue instead of 10 concurrent uploads.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function enqueueMediaFiles(editor: any, files: ArrayLike<File>) {
+  const list = Array.from(files ?? []);
+  if (list.length === 0) return;
+  // A queue is already running — ignore the new batch (matches the paste
+  // handler, which swallows further input while uploading) instead of
+  // clobbering the in-flight progress state.
+  if (queueState.active) return;
+
+  cancelRequested = false;
+  setQueueState({
+    total: list.length,
+    done: 0,
+    failed: 0,
+    active: true,
+    completed: false,
+    exiting: false,
+    cancelled: false,
+  });
+
+  try {
+    for (let i = 0; i < list.length; i += 1) {
+      if (cancelRequested) break;
+
+      const file = list[i];
+      // Pre-measure images so the skeleton reserves the right aspect ratio.
+      const dims = file.type.startsWith('image/')
+        ? await measureImageFile(file)
+        : null;
+      if (cancelRequested) break;
+
+      const before = collectPlaceholderIds(editor);
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      // One file per insert keeps us within maxFileCount and lets us track the
+      // single new placeholder to await.
+      editor.getTransforms(PlaceholderPlugin).insert.media(dt.files);
+      const after = collectPlaceholderIds(editor);
+      const newId = [...after].find((id) => !before.has(id));
+
+      if (newId && dims) pasteImageHints.set(newId, dims);
+
+      const controller = new AbortController();
+      currentAbortController = controller;
+      if (newId) pasteAbortControllers.set(newId, controller);
+
+      if (newId) await waitForPlaceholderRemoved(editor, newId);
+
+      if (newId) {
+        pasteImageHints.delete(newId);
+        pasteAbortControllers.delete(newId);
+      }
+      currentAbortController = null;
+
+      if (cancelRequested) break;
+      setQueueState({ done: queueState.done + 1 });
+    }
+  } finally {
+    if (cancelRequested) {
+      setQueueState({ exiting: true });
+      setTimeout(() => {
+        setQueueState(initialQueueState);
+        cancelRequested = false;
+      }, 360);
+    } else {
+      // Green check, brief hold, then fade out — same as the paste flow.
+      setQueueState({ completed: true });
+      setTimeout(() => {
+        setQueueState({ exiting: true });
+        setTimeout(() => setQueueState(initialQueueState), 360);
+      }, 900);
+    }
+  }
+}
+
 // Mounted for the lifetime of the editor. When the editor unmounts (user
 // navigated away from the page) we wipe any in-flight queue state so a return
 // trip starts clean instead of showing a stale progress bar.
