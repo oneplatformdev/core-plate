@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 
 import { PlaceholderPlugin } from '@platejs/media/react';
 import { KEYS } from 'platejs';
-import { createPlatePlugin } from 'platejs/react';
+import { createPlatePlugin, useEditorRef } from 'platejs/react';
 
 import { usePlateI18n } from '@/i18n/provider';
 import { measureImageFile, pasteImageHints } from '@/lib/paste-image-hints';
@@ -417,6 +417,144 @@ const waitForPlaceholderRemoved = (
     tick();
   });
 
+// Drop / programmatic entry point: upload a batch of real File objects ONE AT A
+// TIME through the same queue + progress overlay as the Google-Docs paste flow.
+// Mirrors the paste loop but without PUA markers — we already hold the files, so
+// each one is inserted as a placeholder and we wait for it to finish uploading
+// before starting the next. Used by the editor's file-drop handler so dropping
+// e.g. 10 files creates a sequential queue instead of 10 concurrent uploads.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function enqueueMediaFiles(editor: any, files: ArrayLike<File>) {
+  const list = Array.from(files ?? []);
+  console.log('[mediaQueue] enqueueMediaFiles called, files=', list.length); // TEMP DEBUG
+  if (list.length === 0) return;
+  // A queue is already running — ignore the new batch (matches the paste
+  // handler, which swallows further input while uploading) instead of
+  // clobbering the in-flight progress state.
+  if (queueState.active) return;
+
+  cancelRequested = false;
+  setQueueState({
+    total: list.length,
+    done: 0,
+    failed: 0,
+    active: true,
+    completed: false,
+    exiting: false,
+    cancelled: false,
+  });
+
+  try {
+    for (let i = 0; i < list.length; i += 1) {
+      if (cancelRequested) break;
+
+      const file = list[i];
+      // Pre-measure images so the skeleton reserves the right aspect ratio.
+      const dims = file.type.startsWith('image/')
+        ? await measureImageFile(file)
+        : null;
+      if (cancelRequested) break;
+
+      const before = collectPlaceholderIds(editor);
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      // One file per insert keeps us within maxFileCount and lets us track the
+      // single new placeholder to await.
+      editor.getTransforms(PlaceholderPlugin).insert.media(dt.files);
+      const after = collectPlaceholderIds(editor);
+      const newId = [...after].find((id) => !before.has(id));
+
+      if (newId && dims) pasteImageHints.set(newId, dims);
+
+      const controller = new AbortController();
+      currentAbortController = controller;
+      if (newId) pasteAbortControllers.set(newId, controller);
+
+      if (newId) await waitForPlaceholderRemoved(editor, newId);
+
+      if (newId) {
+        pasteImageHints.delete(newId);
+        pasteAbortControllers.delete(newId);
+      }
+      currentAbortController = null;
+
+      if (cancelRequested) break;
+      setQueueState({ done: queueState.done + 1 });
+    }
+  } finally {
+    if (cancelRequested) {
+      setQueueState({ exiting: true });
+      setTimeout(() => {
+        setQueueState(initialQueueState);
+        cancelRequested = false;
+      }, 360);
+    } else {
+      // Green check, brief hold, then fade out — same as the paste flow.
+      setQueueState({ completed: true });
+      setTimeout(() => {
+        setQueueState({ exiting: true });
+        setTimeout(() => setQueueState(initialQueueState), 360);
+      }, 900);
+    }
+  }
+}
+
+// Native, capture-phase file-drop interceptor. Neither the dnd plugin's
+// onDropFiles nor Plate's `handlers.onDrop` fire for OS file drops here —
+// react-dnd's HTML5Backend grabs the native drop first and Slate's default then
+// crashes on it (removeNodes on an undefined path). Catching the DOM `drop` in
+// the CAPTURE phase on the editor container — before react-dnd's window-level
+// handling completes — lets us preventDefault + stopPropagation and route the
+// files into the same sequential upload queue + overlay as the paste flow.
+function FileDropQueue() {
+  const editor = useEditorRef();
+
+  React.useEffect(() => {
+    let root: HTMLElement | null = null;
+    try {
+      root = editor.api.toDOMNode(editor) as HTMLElement | null;
+    } catch {
+      root = null;
+    }
+    if (!root) return;
+
+    // Catch drops anywhere over the editor's scroll area, not just the text.
+    const editable =
+      (root.closest('[data-slate-editor]') as HTMLElement) ?? root;
+    const scope: HTMLElement = editable.parentElement ?? editable;
+
+    const hasFiles = (e: DragEvent) =>
+      Array.from(e.dataTransfer?.types ?? []).includes('Files');
+
+    const onDragOver = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      // Required so the element is treated as a valid drop target and the
+      // subsequent `drop` event actually fires.
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    };
+
+    const onDrop = (e: DragEvent) => {
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[mediaQueue] native capture drop, files=', files.length); // TEMP DEBUG
+      void enqueueMediaFiles(editor, files);
+    };
+
+    scope.addEventListener('dragover', onDragOver as EventListener, true);
+    scope.addEventListener('drop', onDrop as EventListener, true);
+    return () => {
+      scope.removeEventListener('dragover', onDragOver as EventListener, true);
+      scope.removeEventListener('drop', onDrop as EventListener, true);
+    };
+  }, [editor]);
+
+  return null;
+}
+
 // Mounted for the lifetime of the editor. When the editor unmounts (user
 // navigated away from the page) we wipe any in-flight queue state so a return
 // trip starts clean instead of showing a stale progress bar.
@@ -485,6 +623,7 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
   render: {
     afterEditable: () => (
       <>
+        <FileDropQueue />
         <PasteQueueLifecycle />
         <EditorBlockingOverlay />
         <PasteUploadOverlay />
@@ -492,6 +631,21 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
     ),
   },
   handlers: {
+    // Native file drag-and-drop → sequential upload queue (same flow/overlay as
+    // the Google-Docs image paste below). Handled here at the plugin level
+    // because the dnd plugin's onDropFiles doesn't reliably fire for OS files.
+    onDrop: ({ editor, event }) => {
+      const files = (
+        event as unknown as { dataTransfer?: DataTransfer | null }
+      ).dataTransfer?.files;
+      console.log('[mediaQueue] plugin onDrop, files=', files?.length); // TEMP DEBUG
+      if (!files || files.length === 0) return;
+      event.preventDefault();
+      // While a queue runs, swallow further drops instead of starting a second.
+      if (queueState.active) return true;
+      void enqueueMediaFiles(editor, files);
+      return true;
+    },
     onPaste: ({ editor, event }) => {
       // While a queue is running, swallow further paste attempts entirely.
       if (queueState.active) {
@@ -503,7 +657,17 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
       if (!data) return;
 
       const html = data.getData('text/html');
-      if (!html || !/<img[\s>]/i.test(html)) return;
+      if (!html || !/<img[\s>]/i.test(html)) {
+        // No Google-Docs HTML images, but the clipboard may carry real files
+        // (pasted screenshot, copied files) — upload them through the same
+        // sequential queue instead of letting them drop in all at once.
+        if (data.files && data.files.length > 0) {
+          event.preventDefault();
+          void enqueueMediaFiles(editor, data.files);
+          return true;
+        }
+        return;
+      }
 
       const { srcs, markedBody } = extractImagesFromHtml(html);
       if (srcs.length === 0) return;
