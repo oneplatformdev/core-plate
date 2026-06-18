@@ -4,6 +4,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { type Value } from 'platejs';
 import { Plate, usePlateEditor } from 'platejs/react';
 
+import { CharCounterOverlay } from '@/components/char-counter-kit';
 import { createEditorKit } from '@/components/editor-kit';
 import { Editor, EditorContainer } from '@/components/ui/editor';
 import { FixedToolbar } from '@/components/ui/fixed-toolbar';
@@ -80,6 +81,7 @@ export function FeedSplitEditor({ value, onChangeValues }: FeedSplitEditorProps)
                 className="h-full min-h-0 overflow-y-auto overflow-x-hidden"
               >
                 <Editor variant="none" className="px-16 pt-4 pb-24 text-base sm:px-[max(64px,calc(50%-350px))]" />
+                <CharCounterOverlay maxLength={2500} />
               </EditorContainer>
             </div>
           </Plate>

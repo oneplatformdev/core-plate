@@ -8,9 +8,11 @@ export {
   useEditor,
   type CreateEditorKitOptions,
 } from '@/components/editor-kit';
-export type {
-  CharCounterRender,
-  CharCounterRenderProps,
+export {
+  CharCounterOverlay,
+  type CharCounterOverlayProps,
+  type CharCounterRender,
+  type CharCounterRenderProps,
 } from '@/components/char-counter-kit';
 export type { EditorValue } from '@/components/plate-types';
 export { Editor, EditorContainer, EditorView, type EditorProps } from '@/components/ui/editor';
