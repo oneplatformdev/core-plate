@@ -689,6 +689,18 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
       const data = (event as unknown as ClipboardEvent).clipboardData;
       if (!data) return;
 
+      // Copying selection out of this same editor (or pasting it back in)
+      // carries Plate's own lossless fragment format alongside the HTML —
+      // the exact original Slate nodes, no DOM/HTML round-trip involved. Our
+      // HTML-sniffing branches below exist only for content coming from
+      // Google Docs/Word/Sheets, which don't set this. If it's present, step
+      // aside entirely and let Plate's default insertData use it — that's
+      // what actually has lossless table/paragraph/list fidelity; rebuilding
+      // a synthetic DataTransfer from text/html here (as we used to) drops
+      // this format and forces the lossy HTML deserializer path, which is
+      // exactly what was corrupting copy-paste round trips of tables.
+      if (Array.from(data.types).includes('application/x-slate-fragment')) return;
+
       const html = data.getData('text/html');
       if (!html || !/<img[\s>]/i.test(html)) {
         // No Google-Docs HTML images, but the clipboard may carry real files
@@ -702,16 +714,25 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
 
         // Table HTML (Word/Sheets/Docs) wraps rows in <thead>/<tbody>, which
         // @platejs/table's deserializer rules don't recognize — left to the
-        // default paste path the table degrades to plain text. Normalize and
-        // deserialize it ourselves; for non-table HTML this is a no-op fallback.
+        // default paste path the table degrades to plain text. We only need
+        // to fix the markup (unwrap those wrappers) and hand it back to
+        // Plate's own insertData/html-deserialize pipeline, so every other
+        // paste behavior (paragraph/blank-line fidelity, lists, etc.) is
+        // untouched. Deserializing+inserting the body ourselves here used to
+        // bypass that pipeline entirely and collapsed the rest of the
+        // document's formatting — don't reintroduce that.
         if (html && /<table[\s>]/i.test(html)) {
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, 'text/html');
           unwrapTableWrappers(doc.body);
-          const fragment = editor.api.html.deserialize({ element: doc.body });
-          if (Array.isArray(fragment) && fragment.length > 0) {
+          const correctedHtml = doc.body.innerHTML;
+          if (correctedHtml) {
             event.preventDefault();
-            editor.tf.insertFragment(fragment);
+            const transfer = new DataTransfer();
+            transfer.setData('text/html', correctedHtml);
+            const plain = data.getData('text/plain');
+            if (plain) transfer.setData('text/plain', plain);
+            editor.tf.insertData(transfer);
             return true;
           }
         }
@@ -726,11 +747,21 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
       // Insert the whole HTML fragment first — images are now PUA-text markers,
       // so the document structure (paragraphs, lists, ordering) is preserved
       // and we know exactly where each image needs to land.
+      //
+      // This used to deserialize markedBody and editor.tf.insertFragment the
+      // result directly, which bypasses Plate's own insertData pipeline
+      // (paragraph/blank-line handling, list/table rules, etc.) and collapses
+      // formatting — most visible when copying content back out of this same
+      // editor (its own clipboard HTML round-trips through here too, since it
+      // always contains <img> placeholders). Hand the marked-up HTML back to
+      // the standard insertData transform instead, same as the table-only
+      // path above.
       if (markedBody.textContent?.trim() || markedBody.children.length) {
-        const fragment = editor.api.html.deserialize({ element: markedBody });
-        if (Array.isArray(fragment) && fragment.length > 0) {
-          editor.tf.insertFragment(fragment);
-        }
+        const transfer = new DataTransfer();
+        transfer.setData('text/html', markedBody.innerHTML);
+        const plain = data.getData('text/plain');
+        if (plain) transfer.setData('text/plain', plain);
+        editor.tf.insertData(transfer);
       }
 
       void (async () => {
