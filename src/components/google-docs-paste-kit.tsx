@@ -355,7 +355,19 @@ const unwrapTableWrappers = (root: HTMLElement): void => {
       el.remove();
       return;
     }
-    while (el.firstChild) el.parentNode?.insertBefore(el.firstChild, el);
+    while (el.firstChild) {
+      const child = el.firstChild;
+      // Pretty-printed HTML (e.g. copied back out of our own editor) has
+      // whitespace-only text nodes between <tr> tags. Hoisting those up as
+      // direct children of <table> makes the deserializer emit a stray Text
+      // node alongside the row nodes, which later crashes computeCellIndices
+      // (`row.children` is undefined for a Text node). Drop them instead.
+      if (child.nodeType === Node.TEXT_NODE && !child.textContent?.trim()) {
+        child.remove();
+        continue;
+      }
+      el.parentNode?.insertBefore(child, el);
+    }
     el.remove();
   });
 };
