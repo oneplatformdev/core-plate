@@ -340,11 +340,32 @@ const MARKER_OPEN = '';
 const MARKER_CLOSE = '';
 const markerFor = (index: number) => `${MARKER_OPEN}${index}${MARKER_CLOSE}`;
 
+// @platejs/table only registers HTML deserializer rules for <table>/<tr>/<td>/<th>
+// (validNodeName matches), not for <thead>/<tbody>/<tfoot>/<colgroup>. Google Docs,
+// Word and Excel/Sheets all wrap rows in <tbody>, so the deserializer walk never
+// reaches the <tr> elements and the whole table falls back to plain text. Unwrap
+// those wrapper elements (replace them with their children) so the table's direct
+// children are exactly what the upstream rules expect: <tr> and (for <colgroup>) nothing.
+const unwrapTableWrappers = (root: HTMLElement): void => {
+  const wrappers = Array.from(
+    root.querySelectorAll('thead, tbody, tfoot, colgroup')
+  );
+  wrappers.forEach((el) => {
+    if (el.tagName === 'COLGROUP') {
+      el.remove();
+      return;
+    }
+    while (el.firstChild) el.parentNode?.insertBefore(el.firstChild, el);
+    el.remove();
+  });
+};
+
 const extractImagesFromHtml = (
   html: string
 ): { srcs: string[]; markedBody: HTMLElement } => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
+  unwrapTableWrappers(doc.body);
   const imgs = Array.from(doc.querySelectorAll('img'));
   const srcs: string[] = [];
   imgs.forEach((img) => {
@@ -665,6 +686,22 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
           event.preventDefault();
           void enqueueMediaFiles(editor, data.files);
           return true;
+        }
+
+        // Table HTML (Word/Sheets/Docs) wraps rows in <thead>/<tbody>, which
+        // @platejs/table's deserializer rules don't recognize — left to the
+        // default paste path the table degrades to plain text. Normalize and
+        // deserialize it ourselves; for non-table HTML this is a no-op fallback.
+        if (html && /<table[\s>]/i.test(html)) {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          unwrapTableWrappers(doc.body);
+          const fragment = editor.api.html.deserialize({ element: doc.body });
+          if (Array.isArray(fragment) && fragment.length > 0) {
+            event.preventDefault();
+            editor.tf.insertFragment(fragment);
+            return true;
+          }
         }
         return;
       }
