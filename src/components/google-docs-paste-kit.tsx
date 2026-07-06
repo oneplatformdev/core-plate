@@ -689,6 +689,8 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
       const data = (event as unknown as ClipboardEvent).clipboardData;
       if (!data) return;
 
+      const html = data.getData('text/html');
+
       // Copying selection out of this same editor (or pasting it back in)
       // carries Plate's own lossless fragment format alongside the HTML —
       // the exact original Slate nodes, no DOM/HTML round-trip involved. Our
@@ -701,7 +703,36 @@ export const GoogleDocsPastePlugin = createPlatePlugin({
       // exactly what was corrupting copy-paste round trips of tables.
       if (Array.from(data.types).includes('application/x-slate-fragment')) return;
 
-      const html = data.getData('text/html');
+      // Safari/WebKit does not preserve non-standard clipboard MIME types
+      // (only text/plain, text/html, text/uri-list, Files survive the OS
+      // pasteboard round-trip there), so `application/x-slate-fragment` is
+      // silently dropped on that browser even for an internal editor copy.
+      // slate-react embeds the same payload as a literal
+      // `data-slate-fragment="..."` attribute inside the text/html string as
+      // a fallback for exactly this case — but Plate's own default insertData
+      // pipeline does NOT reliably recover it from there: its generic HTML
+      // deserializer just treats the wrapping element like any other node,
+      // copying `data-*` attributes onto the resulting node's properties.
+      // That corrupts the paste twice over — sibling paragraphs collapse
+      // into one block (the deserializer has no block-boundary rule for our
+      // internal `<div class="slate-p">` markup, only real `<p>`/`<h1>` tags),
+      // and a stray node ends up with a `fragment: "<the whole base64 blob>"`
+      // property. So don't just step aside here: pull the payload out
+      // ourselves and hand Plate a DataTransfer with the canonical MIME type
+      // restored, which is the exact shape Chrome's real paste event has and
+      // which we've confirmed round-trips losslessly.
+      const fragmentMatch = /\sdata-slate-fragment="([^"]+)"/.exec(html);
+      if (fragmentMatch) {
+        event.preventDefault();
+        const transfer = new DataTransfer();
+        transfer.setData('application/x-slate-fragment', fragmentMatch[1]);
+        transfer.setData('text/html', html);
+        const plainForFragment = data.getData('text/plain');
+        if (plainForFragment) transfer.setData('text/plain', plainForFragment);
+        editor.tf.insertData(transfer);
+        return true;
+      }
+
       if (!html || !/<img[\s>]/i.test(html)) {
         // No Google-Docs HTML images, but the clipboard may carry real files
         // (pasted screenshot, copied files) — upload them through the same
