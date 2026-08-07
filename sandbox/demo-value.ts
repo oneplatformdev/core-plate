@@ -15,20 +15,22 @@ const cell = (text: string, isHeader = false) => ({
   type: isHeader ? 'th' : 'td',
 });
 
+// Deliberately taller than the viewport and wider than the editor column: the
+// height is what makes the floating toolbar's anchoring visible (it has to
+// track the caret, not sit at the table's far edge), and the width is what
+// makes the "expand" affordance appear so the fullscreen modal is reachable.
+const COLUMN_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
 const demoTable = {
   children: [
     {
-      children: [cell('Header A', true), cell('Header B', true), cell('Header C', true)],
+      children: COLUMN_LABELS.map((label) => cell(`Header ${label}`, true)),
       type: 'tr',
     },
-    {
-      children: [cell('A1'), cell('B1'), cell('C1')],
+    ...Array.from({ length: 24 }, (_, rowIndex) => ({
+      children: COLUMN_LABELS.map((label) => cell(`${label}${rowIndex + 1}`)),
       type: 'tr',
-    },
-    {
-      children: [cell('A2'), cell('B2'), cell('C2')],
-      type: 'tr',
-    },
+    })),
   ],
   type: 'table',
 };

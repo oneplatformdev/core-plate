@@ -799,7 +799,7 @@ export const TableElement = withHOC(
     // Already inside the fullscreen sub-editor: edit normally, no nested expand.
     if (isInsideFullscreen) {
       return (
-        <TableFloatingToolbar anchorRef={wrapperRef}>
+        <TableFloatingToolbar anchorRef={wrapperRef} tableRef={tableRef}>
           {content}
         </TableFloatingToolbar>
       );
@@ -811,7 +811,7 @@ export const TableElement = withHOC(
           tableWrapRef={wrapperRef}
           onExpand={() => setExpanded(true)}
         >
-          <TableFloatingToolbar anchorRef={wrapperRef}>
+          <TableFloatingToolbar anchorRef={wrapperRef} tableRef={tableRef}>
             {content}
           </TableFloatingToolbar>
         </TableEditorExpandable>
@@ -859,54 +859,164 @@ function readSafeAreaTop(node: HTMLElement): number {
   return Number.isFinite(parsed) && raw.endsWith('px') ? Math.max(parsed, 0) : 0;
 }
 
+function nearestScrollable(node: Element): Element | null {
+  let element = node.parentElement;
+
+  while (element) {
+    // The height check is not redundant: setting only `overflow-x: auto` (which
+    // the table wrapper does) makes the computed `overflow-y` `auto` as well,
+    // so the style alone would match a purely horizontal scroller and pin the
+    // observer root to the table itself.
+    if (
+      /auto|scroll/.test(getComputedStyle(element).overflowY) &&
+      element.scrollHeight > element.clientHeight
+    ) {
+      return element;
+    }
+
+    element = element.parentElement;
+  }
+
+  return null;
+}
+
 /**
- * Tracks whether the table is still on screen. `IntersectionObserver` already
- * accounts for every clipping ancestor, so this works both when the page
- * scrolls and when the editor lives inside its own scroll container — without
- * this component having to know which one it is.
+ * How much of the top of the scroll viewport is covered by something the
+ * toolbar must not slide under: the editor's own sticky toolbar, plus whatever
+ * strip the host app declared via `--op-plate-safe-area-top`.
+ *
+ * The editor toolbar is found rather than assumed because its height depends on
+ * the item set and on wrapping, and because the fullscreen modal has its own.
+ * Only sticky/fixed toolbars horizontally overlapping the table count — a
+ * toolbar that scrolls away with the content obstructs nothing.
  */
-function useAnchorOnScreen(
-  anchorRef: React.RefObject<HTMLElement | null> | undefined,
-  enabled: boolean
-) {
+function topObstruction(node: Element, root: Element | null): number {
+  const declared = readSafeAreaTop(node as HTMLElement);
+  const rootTop = root ? root.getBoundingClientRect().top : 0;
+  const nodeRect = node.getBoundingClientRect();
+
+  let obstruction = declared;
+
+  node.ownerDocument.querySelectorAll('[role="toolbar"]').forEach((toolbar) => {
+    if (!/sticky|fixed/.test(getComputedStyle(toolbar).position)) return;
+
+    const rect = toolbar.getBoundingClientRect();
+    if (rect.right <= nodeRect.left || rect.left >= nodeRect.right) return;
+
+    obstruction = Math.max(obstruction, rect.bottom - rootTop);
+  });
+
+  return Math.max(obstruction, 0);
+}
+
+/**
+ * Tracks whether the caret's cell is still visible, measured against the scroll
+ * container and minus the obstructed strip at its top.
+ *
+ * Watching the cell rather than the whole table matters once a table is taller
+ * than the viewport: the table can still be well in view while the cell being
+ * edited has scrolled up under the toolbar, and the toolbar pinned to that cell
+ * would be drawn across it.
+ */
+function useAnchorOnScreen(anchor: Element | null, enabled: boolean) {
   const [onScreen, setOnScreen] = React.useState(true);
 
   React.useEffect(() => {
-    const node = anchorRef?.current;
-
-    if (!enabled || !node || typeof IntersectionObserver === 'undefined') {
+    if (!anchor || !enabled || typeof IntersectionObserver === 'undefined') {
       setOnScreen(true);
 
       return;
     }
 
-    const safeAreaTop = readSafeAreaTop(node);
+    const root = nearestScrollable(anchor);
+    const obstruction = topObstruction(anchor, root);
     const observer = new IntersectionObserver(
       ([entry]) => {
         setOnScreen(entry?.isIntersecting ?? true);
       },
       {
-        rootMargin: safeAreaTop ? `-${safeAreaTop}px 0px 0px 0px` : undefined,
+        root,
+        rootMargin: obstruction ? `-${obstruction}px 0px 0px 0px` : undefined,
         threshold: 0,
       }
     );
 
-    observer.observe(node);
+    observer.observe(anchor);
 
     return () => {
       observer.disconnect();
     };
-  }, [anchorRef, enabled]);
+  }, [anchor, enabled]);
 
   return onScreen;
+}
+
+/**
+ * Anchors the toolbar to the cell holding the caret rather than to the whole
+ * table. For a table taller than the viewport the two are nowhere near each
+ * other: anchored to the table, the toolbar sits at its far edge, hundreds of
+ * pixels off screen from where the user is actually typing.
+ *
+ * This is a Radix "virtual" anchor — an object that only has to report a rect —
+ * so it can follow the caret from cell to cell without re-mounting the popover.
+ * The rect is resolved on read (the popover repositions every animation frame),
+ * and falls back to the table wrapper whenever the caret is not in a cell of
+ * *this* table, which also covers the multi-cell selection case.
+ */
+function useCaretCellAnchor(
+  tableRef: React.RefObject<HTMLTableElement | null>,
+  fallbackRef: React.RefObject<HTMLElement | null>
+) {
+  // Radix only re-reads the anchor when the anchor *object* changes — it does
+  // not poll a virtual one. So the identity has to change whenever the caret
+  // moves to another cell, which is what this key drives.
+  const caretPathKey = useEditorSelector(
+    (editor) => (editor.selection?.anchor.path ?? []).join('.'),
+    []
+  );
+  const [caretCell, setCaretCell] = React.useState<Element | null>(null);
+
+  React.useEffect(() => {
+    const table = tableRef.current;
+    const selection = typeof window === 'undefined' ? null : getSelection();
+    const anchorNode = selection?.anchorNode ?? null;
+    const anchorElement =
+      anchorNode?.nodeType === Node.ELEMENT_NODE
+        ? (anchorNode as Element)
+        : (anchorNode?.parentElement ?? null);
+    const cell = anchorElement?.closest('td,th') ?? null;
+
+    setCaretCell(cell && table?.contains(cell) ? cell : null);
+  }, [caretPathKey, tableRef]);
+
+  const anchorRef = React.useMemo(
+    () => ({
+      // Radix reads `current` and nothing else. Carrying the key on the object
+      // documents that a new caret position is meant to produce a new anchor
+      // identity, which is the whole point of rebuilding this memo.
+      caretPathKey,
+      current: {
+        // Resolved on read so that scrolling within one cell stays exact.
+        getBoundingClientRect: () =>
+          (caretCell ?? fallbackRef.current)?.getBoundingClientRect() ??
+          new DOMRect(),
+      },
+    }),
+    [caretCell, caretPathKey, fallbackRef]
+  );
+
+  // The cell is also what the on-screen check must watch — see useAnchorOnScreen.
+  return { anchorRef, caretCell };
 }
 
 function TableFloatingToolbar({
   anchorRef,
   children,
+  tableRef,
   ...props
 }: React.ComponentProps<typeof PopoverContent> & {
   anchorRef?: React.RefObject<HTMLElement | null>;
+  tableRef?: React.RefObject<HTMLTableElement | null>;
 }) {
   const selectedCellCount = useEditorSelector(
     (editor) =>
@@ -945,11 +1055,19 @@ function TableFloatingToolbar({
     isExpandedSelectionToolbarReady && isExpandedSelectionPending;
   const isToolbarOpen =
     isCollapsedToolbarOpen || shouldRenderExpandedSelectionToolbar;
-  const isAnchorOnScreen = useAnchorOnScreen(anchorRef, isToolbarOpen);
+  const { anchorRef: caretAnchorRef, caretCell } = useCaretCellAnchor(
+    tableRef ?? emptyTableRef,
+    anchorRef ?? emptyAnchorRef
+  );
+  const isAnchorOnScreen = useAnchorOnScreen(
+    caretCell ?? anchorRef?.current ?? null,
+    isToolbarOpen
+  );
 
   return (
     <Popover open={isToolbarOpen} modal={false}>
-      <PopoverAnchor asChild>{children}</PopoverAnchor>
+      {children}
+      <PopoverAnchor virtualRef={caretAnchorRef} />
       {isCollapsedToolbarOpen && (
         <CollapsedTableFloatingToolbarContent
           anchorHidden={!isAnchorOnScreen}
@@ -965,6 +1083,11 @@ function TableFloatingToolbar({
     </Popover>
   );
 }
+
+// Stable no-op refs so the hooks above keep an unconditional call order even
+// when this toolbar is rendered without the optional refs.
+const emptyTableRef: React.RefObject<HTMLTableElement | null> = { current: null };
+const emptyAnchorRef: React.RefObject<HTMLElement | null> = { current: null };
 
 type TableFloatingToolbarContentProps = React.ComponentProps<
   typeof PopoverContent
@@ -1085,6 +1208,21 @@ function TableFloatingToolbarContent({
           anchorHidden && 'pointer-events-none opacity-0'
         )}
         contentEditable={false}
+        // In the page editor: one below the editor's own sticky FixedToolbar
+        // (`z-50`). Both used to sit at `z-50`, and this one is portalled to
+        // `<body>`, so it won the tie on DOM order and painted *over* the main
+        // toolbar whenever a partially-scrolled cell put it up there.
+        //
+        // In the fullscreen modal the same value would hide it entirely: the
+        // overlay is itself `z-50` and forms a stacking context, so anything
+        // below 50 lands behind the whole modal. Nothing can be both above the
+        // overlay and below a toolbar nested inside it, so there we keep 50 and
+        // rely on the fade to clear the toolbar's strip.
+        //
+        // Radix mirrors the content's computed z-index onto its popper wrapper,
+        // so setting it here is enough. Inline rather than a class, which would
+        // collide with the `z-50` PopoverContent already carries.
+        style={{ zIndex: isInsideFullscreen ? 50 : 40, ...props.style }}
         // Read by index.css to disable pointer events on Radix's popper
         // wrapper too — see the rule there.
         data-op-toolbar-hidden={anchorHidden ? 'true' : undefined}
