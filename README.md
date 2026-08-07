@@ -224,6 +224,20 @@ import '@oneplatformdev/plate/styles.scoped.css';
 
 All editor selectors are prefixed with `.op-plate-scope`, isolating them from the rest of your app.
 
+### Fixed headers: `--op-plate-safe-area-top`
+
+The table floating toolbar is pinned just below the table it belongs to and travels with it as the page scrolls. If your app renders the editor under a **fixed / sticky header**, there is a short window — while the table is scrolling out of the top of the viewport — where the toolbar sits inside the header's strip and covers it.
+
+Declare the height of that strip and the toolbar fades out before it gets there:
+
+```css
+:root {
+  --op-plate-safe-area-top: 64px; /* your header height */
+}
+```
+
+The variable is inherited, so it can go on `:root`, on the app shell, or on the editor container — whichever matches the layout. Only `px` values are read; anything else (or no value at all) means "no safe area", which is the default.
+
 ---
 
 ## Package structure

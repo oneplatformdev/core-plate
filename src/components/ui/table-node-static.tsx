@@ -87,7 +87,11 @@ export function TableCellElementStatic({
       }}
     >
       <div
-        className="relative z-20 box-border h-full px-4 py-2 whitespace-normal break-normal [overflow-wrap:normal] [word-break:normal] [&_*]:[word-break:normal]"
+        // Mirrors the interactive cell wrapper — see table-node.tsx for why
+        // `whitespace-pre-wrap` is required rather than `whitespace-normal`.
+        // Keeping them identical also keeps static output pixel-identical to
+        // the editable one.
+        className="relative z-20 box-border h-full px-4 py-2 whitespace-pre-wrap break-normal [overflow-wrap:normal] [word-break:normal] [&_*]:[word-break:normal]"
         style={{ minHeight }}
       >
         {props.children}

@@ -798,7 +798,11 @@ export const TableElement = withHOC(
 
     // Already inside the fullscreen sub-editor: edit normally, no nested expand.
     if (isInsideFullscreen) {
-      return <TableFloatingToolbar>{content}</TableFloatingToolbar>;
+      return (
+        <TableFloatingToolbar anchorRef={wrapperRef}>
+          {content}
+        </TableFloatingToolbar>
+      );
     }
 
     return (
@@ -807,7 +811,9 @@ export const TableElement = withHOC(
           tableWrapRef={wrapperRef}
           onExpand={() => setExpanded(true)}
         >
-          <TableFloatingToolbar>{content}</TableFloatingToolbar>
+          <TableFloatingToolbar anchorRef={wrapperRef}>
+            {content}
+          </TableFloatingToolbar>
         </TableEditorExpandable>
 
         {expanded && (
@@ -828,10 +834,80 @@ export const TableElement = withHOC(
   }
 );
 
+/**
+ * Host apps usually render the editor under a fixed header. The toolbar is
+ * pinned below the table, so while the table is scrolling out of view there is
+ * a window where the toolbar sits inside the header's strip and covers it.
+ * Consumers declare that strip by setting `--op-plate-safe-area-top` (any
+ * CSS length, inherited — put it on the app shell or on the editor container);
+ * the toolbar then fades out before it reaches the header instead of after.
+ */
+const TABLE_TOOLBAR_SAFE_AREA_TOP_VAR = '--op-plate-safe-area-top';
+
+function readSafeAreaTop(node: HTMLElement): number {
+  const raw = getComputedStyle(node)
+    .getPropertyValue(TABLE_TOOLBAR_SAFE_AREA_TOP_VAR)
+    .trim();
+
+  if (!raw) return 0;
+
+  // `getComputedStyle` resolves custom properties as written, so anything but
+  // px would need a layout probe to convert. Px covers the header case and
+  // anything else degrades to "no safe area" rather than to a wrong number.
+  const parsed = Number.parseFloat(raw);
+
+  return Number.isFinite(parsed) && raw.endsWith('px') ? Math.max(parsed, 0) : 0;
+}
+
+/**
+ * Tracks whether the table is still on screen. `IntersectionObserver` already
+ * accounts for every clipping ancestor, so this works both when the page
+ * scrolls and when the editor lives inside its own scroll container — without
+ * this component having to know which one it is.
+ */
+function useAnchorOnScreen(
+  anchorRef: React.RefObject<HTMLElement | null> | undefined,
+  enabled: boolean
+) {
+  const [onScreen, setOnScreen] = React.useState(true);
+
+  React.useEffect(() => {
+    const node = anchorRef?.current;
+
+    if (!enabled || !node || typeof IntersectionObserver === 'undefined') {
+      setOnScreen(true);
+
+      return;
+    }
+
+    const safeAreaTop = readSafeAreaTop(node);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setOnScreen(entry?.isIntersecting ?? true);
+      },
+      {
+        rootMargin: safeAreaTop ? `-${safeAreaTop}px 0px 0px 0px` : undefined,
+        threshold: 0,
+      }
+    );
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [anchorRef, enabled]);
+
+  return onScreen;
+}
+
 function TableFloatingToolbar({
+  anchorRef,
   children,
   ...props
-}: React.ComponentProps<typeof PopoverContent>) {
+}: React.ComponentProps<typeof PopoverContent> & {
+  anchorRef?: React.RefObject<HTMLElement | null>;
+}) {
   const selectedCellCount = useEditorSelector(
     (editor) =>
       editor.getApi(TablePlugin).table.getSelectedCellIds()?.length ?? 0,
@@ -869,22 +945,37 @@ function TableFloatingToolbar({
     isExpandedSelectionToolbarReady && isExpandedSelectionPending;
   const isToolbarOpen =
     isCollapsedToolbarOpen || shouldRenderExpandedSelectionToolbar;
+  const isAnchorOnScreen = useAnchorOnScreen(anchorRef, isToolbarOpen);
 
   return (
     <Popover open={isToolbarOpen} modal={false}>
       <PopoverAnchor asChild>{children}</PopoverAnchor>
       {isCollapsedToolbarOpen && (
-        <CollapsedTableFloatingToolbarContent {...props} />
+        <CollapsedTableFloatingToolbarContent
+          anchorHidden={!isAnchorOnScreen}
+          {...props}
+        />
       )}
       {shouldRenderExpandedSelectionToolbar && (
-        <ExpandedSelectionTableFloatingToolbarContent {...props} />
+        <ExpandedSelectionTableFloatingToolbarContent
+          anchorHidden={!isAnchorOnScreen}
+          {...props}
+        />
       )}
     </Popover>
   );
 }
 
+type TableFloatingToolbarContentProps = React.ComponentProps<
+  typeof PopoverContent
+> & {
+  /** The table scrolled out of view — fade the toolbar out instead of leaving
+   * it stranded over whatever is now under it (a sticky app header, usually). */
+  anchorHidden?: boolean;
+};
+
 function ExpandedSelectionTableFloatingToolbarContent(
-  props: React.ComponentProps<typeof PopoverContent>
+  props: TableFloatingToolbarContentProps
 ) {
   const { tf } = useEditorPlugin(TablePlugin);
   const { canMerge, canSplit } = useTableMergeState();
@@ -903,7 +994,7 @@ function ExpandedSelectionTableFloatingToolbarContent(
 }
 
 function CollapsedTableFloatingToolbarContent(
-  props: React.ComponentProps<typeof PopoverContent>
+  props: TableFloatingToolbarContentProps
 ) {
   const { tf } = useEditorPlugin(TablePlugin);
   const element = useElement<TTableElement>();
@@ -940,6 +1031,7 @@ function CollapsedTableFloatingToolbarContent(
 }
 
 function TableFloatingToolbarContent({
+  anchorHidden = false,
   buttonProps,
   canMerge = false,
   canSplit = false,
@@ -953,7 +1045,7 @@ function TableFloatingToolbarContent({
   onMerge,
   onSplit,
   ...props
-}: React.ComponentProps<typeof PopoverContent> & {
+}: TableFloatingToolbarContentProps & {
   buttonProps?: React.ComponentProps<typeof ToolbarButton>;
   canMerge?: boolean;
   canSplit?: boolean;
@@ -972,13 +1064,30 @@ function TableFloatingToolbarContent({
   return (
     <PopoverContent
       asChild
+      // `updatePositionStrategy="always"` makes Radix reposition on every
+      // animation frame instead of only on the scroll/resize events floating-ui
+      // managed to subscribe to. The default misses host layouts whose scroll
+      // container it did not detect as an overflow ancestor: the toolbar then
+      // freezes at its last viewport position while the table scrolls away
+      // underneath — which is what "the menu flies up into the header" actually
+      // is. Collision avoidance stays ON so the toolbar is never pushed off
+      // screen and out of reach; keeping it on screen while the table is gone
+      // is instead handled by `hideWhenDetached` and the `anchorHidden` fade.
+      updatePositionStrategy="always"
+      hideWhenDetached
       onOpenAutoFocus={(e) => e.preventDefault()}
       contentEditable={false}
       {...props}
     >
       <Toolbar
-        className="scrollbar-hide flex w-auto max-w-[80vw] flex-row overflow-x-auto rounded-md border bg-popover p-1 shadow-md print:hidden"
+        className={cn(
+          'scrollbar-hide flex w-auto max-w-[80vw] flex-row overflow-x-auto rounded-md border bg-popover p-1 shadow-md transition-opacity duration-150 print:hidden',
+          anchorHidden && 'pointer-events-none opacity-0'
+        )}
         contentEditable={false}
+        // Read by index.css to disable pointer events on Radix's popper
+        // wrapper too — see the rule there.
+        data-op-toolbar-hidden={anchorHidden ? 'true' : undefined}
       >
         <ToolbarGroup>
           <ColorDropdownMenu tooltip={t('backgroundColor')}>
@@ -1405,7 +1514,13 @@ export function TableCellElement({
       }}
     >
       <div
-        className="relative z-20 box-border h-full px-3 py-2 whitespace-normal break-normal [overflow-wrap:normal] [word-break:normal] [&_*]:[word-break:normal]"
+        // `whitespace-pre-wrap` is mandatory, not cosmetic: with `white-space:
+        // normal` the browser collapses the trailing space of a cell, so the
+        // caret never advances past it and the next keystroke is inserted
+        // *before* the space ("A1x" + Space + "y" → "A1xy "). `break-normal` /
+        // `word-break: normal` keep long words from being split mid-word,
+        // which is the behaviour this wrapper actually wants.
+        className="relative z-20 box-border h-full px-3 py-2 whitespace-pre-wrap break-normal [overflow-wrap:normal] [word-break:normal] [&_*]:[word-break:normal]"
         style={
           rowSpan === 1
             ? { minHeight: 'var(--tableRowMinHeight, 0px)' }

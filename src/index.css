@@ -180,3 +180,14 @@
   cursor: pointer;
   border: none;
 }
+
+/*
+ * The table floating toolbar fades out (opacity 0 + pointer-events: none) once
+ * its table scrolls off screen. That is not enough on its own: Radix's popper
+ * wrapper is a separate element it owns, it keeps `pointer-events: auto`, and
+ * hit-testing stops at the wrapper — so a faded-out toolbar would still be an
+ * invisible wall over the document. Turn the wrapper off along with it.
+ */
+[data-radix-popper-content-wrapper]:has(> [data-op-toolbar-hidden='true']) {
+  pointer-events: none;
+}
