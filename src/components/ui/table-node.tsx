@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { useDraggable, useDropLine } from '@platejs/dnd';
+import { DndPlugin, useDraggable, useDropLine } from '@platejs/dnd';
 import {
   BlockSelectionPlugin,
   useBlockSelected,
@@ -1462,13 +1462,65 @@ function ColorDropdownMenu({
   );
 }
 
+/**
+ * Wires react-dnd up for one row.
+ *
+ * This lives in its own component because `useDraggable` subscribes to the
+ * editor and re-renders its host on **every** document change. Held inside
+ * `TableRowElement`, that re-rendered every row of the table on every
+ * keystroke — even while typing in a paragraph elsewhere in the document
+ * (measured: 25 rows × StrictMode = 50 row renders per typed character,
+ * ~60ms of the per-keystroke cost on a 25-row table).
+ *
+ * The row passes its own `nodeRef` in, so drag and drop still attach to the
+ * `<tr>` itself rather than to anything this renders.
+ */
+function TableRowDragSource({
+  element,
+  onDraggingChange,
+  rowRef,
+}: {
+  element: TTableRowElement;
+  onDraggingChange: (isDragging: boolean) => void;
+  rowRef: React.RefObject<HTMLTableRowElement | null>;
+}) {
+  const editor = useEditorRef();
+  const { isDragging, previewRef, handleRef } = useDraggable({
+    element,
+    type: element.type,
+    nodeRef: rowRef as never,
+    canDropNode: ({ dragEntry, dropEntry }) =>
+      PathApi.equals(
+        PathApi.parent(dragEntry[1]),
+        PathApi.parent(dropEntry[1])
+      ),
+    onDropHandler: (_, { dragItem }) => {
+      const dragElement = (dragItem as { element: TElement }).element;
+
+      if (dragElement) {
+        editor.tf.select(dragElement);
+      }
+    },
+  });
+
+  // The drag preview is the row itself.
+  React.useEffect(() => {
+    previewRef.current = rowRef.current as never;
+  });
+
+  React.useEffect(() => {
+    onDraggingChange(isDragging);
+  }, [isDragging, onDraggingChange]);
+
+  return <RowDragHandle dragRef={handleRef} />;
+}
+
 export function TableRowElement({
   children,
   ...props
 }: PlateElementProps<TTableRowElement>) {
   const { element } = props;
   const readOnly = useReadOnly();
-  const editor = useEditorRef();
   const rowIndex = useElementSelector(([, path]) => path.at(-1) as number, [], {
     key: KEYS.tr,
   });
@@ -1487,27 +1539,19 @@ export function TableRowElement({
   );
   const hasControls = !readOnly && !isSelectionAreaVisible;
 
-  const { isDragging, nodeRef, previewRef, handleRef } = useDraggable({
-    element,
-    type: element.type,
-    canDropNode: ({ dragEntry, dropEntry }) =>
-      PathApi.equals(
-        PathApi.parent(dragEntry[1]),
-        PathApi.parent(dropEntry[1])
-      ),
-    onDropHandler: (_, { dragItem }) => {
-      const dragElement = (dragItem as { element: TElement }).element;
-
-      if (dragElement) {
-        editor.tf.select(dragElement);
-      }
-    },
-  });
+  const rowRef = React.useRef<HTMLTableRowElement>(null);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
+  // A drag in progress anywhere means every row has to be a live drop target.
+  // Otherwise only the hovered row needs one, since the handle is what starts a
+  // drag and it is itself only revealed on hover.
+  const isDragInProgress = usePluginOption(DndPlugin, 'isDragging');
+  const needsDragSource = hasControls && (isHovered || isDragInProgress);
 
   return (
     <PlateElement
       {...props}
-      ref={useComposedRef(props.ref, previewRef, nodeRef)}
+      ref={useComposedRef(props.ref, rowRef)}
       as="tr"
       className={cn('group/row', isDragging && 'opacity-50')}
       style={
@@ -1516,13 +1560,24 @@ export function TableRowElement({
           '--tableRowMinHeight': rowMinHeight ? `${rowMinHeight}px` : undefined,
         } as React.CSSProperties
       }
+      attributes={{
+        ...props.attributes,
+        onMouseEnter: () => setIsHovered(true),
+        onMouseLeave: () => setIsHovered(false),
+      }}
     >
       {hasControls && (
         <td
           className="w-2 min-w-2 max-w-2 select-none p-0"
           contentEditable={false}
         >
-          <RowDragHandle dragRef={handleRef} />
+          {needsDragSource && (
+            <TableRowDragSource
+              element={element}
+              onDraggingChange={setIsDragging}
+              rowRef={rowRef}
+            />
+          )}
           <RowDropLine />
         </td>
       )}
