@@ -156,47 +156,104 @@ export function FixedToolbarButtons() {
     [t]
   );
 
+  // Button widths depend only on the item set (icons, and the labels inside
+  // `turn-into` / `font-size`), never on editor content or container width. So
+  // they are measured once per item set and cached: the hidden probe row is
+  // mounted only while `needsMeasure` is true and dropped straight afterwards.
+  // Keeping it mounted meant every keystroke re-rendered all ~27 buttons a
+  // second time, invisibly — measured at 114 ToolbarButton renders per typed
+  // character before this change.
+  const itemWidthsRef = React.useRef<number[] | null>(null);
+  const chromeWidthsRef = React.useRef<{ more: number; separator: number } | null>(
+    null
+  );
+  // Which item set the cached widths belong to. Deriving "do we need to
+  // measure?" from this instead of keeping a separate boolean matters: a
+  // boolean flipped to `false` by the measuring effect and back to `true` by an
+  // items effect settles, within one commit, on the value it already had — so
+  // React skips the re-render and the probe row never unmounts.
+  const [measuredFor, setMeasuredFor] = React.useState<ToolbarItem[] | null>(
+    null
+  );
+  const needsMeasure = measuredFor !== items;
+
+  // Web fonts land after first paint and change label widths.
+  React.useEffect(() => {
+    if (readOnly || typeof document === 'undefined' || !document.fonts) return;
+
+    let cancelled = false;
+    void document.fonts.ready.then(() => {
+      if (!cancelled) setMeasuredFor(null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [readOnly]);
+
+  const recalculate = React.useCallback(() => {
+    const container = containerRef.current;
+    const itemWidths = itemWidthsRef.current;
+    const chrome = chromeWidthsRef.current;
+    if (!container || !itemWidths || !chrome) return;
+
+    const availableWidth = container.offsetWidth;
+
+    let count = 0;
+    let usedWidth = 0;
+    for (let index = 0; index < itemWidths.length; index += 1) {
+      const width = itemWidths[index] ?? 0;
+      const separator =
+        index > 0 && items[index - 1]?.group !== items[index]?.group
+          ? chrome.separator
+          : 0;
+      const hasRemaining = index < itemWidths.length - 1;
+      const reserveForMore = hasRemaining ? chrome.separator + chrome.more : 0;
+      if (usedWidth + separator + width + reserveForMore > availableWidth) break;
+      usedWidth += separator + width;
+      count += 1;
+    }
+
+    setVisibleCount(count);
+  }, [items]);
+
   React.useLayoutEffect(() => {
-    if (readOnly) return;
+    if (readOnly || !needsMeasure) return;
 
-    const recalculate = () => {
-      const container = containerRef.current;
-      if (!container) return;
-
-      const separatorWidth = separatorMeasureRef.current?.offsetWidth ?? 12;
-      const moreWidth = moreMeasureRef.current?.offsetWidth ?? 40;
-      const itemWidths = itemMeasureRefs.current.map((el) => el?.offsetWidth ?? 0);
-      const availableWidth = container.offsetWidth;
-
-      let count = 0;
-      let usedWidth = 0;
-      for (let index = 0; index < itemWidths.length; index += 1) {
-        const width = itemWidths[index] ?? 0;
-        const separator = index > 0 && items[index - 1]?.group !== items[index]?.group ? separatorWidth : 0;
-        const hasRemaining = index < itemWidths.length - 1;
-        const reserveForMore = hasRemaining ? separatorWidth + moreWidth : 0;
-        if (usedWidth + separator + width + reserveForMore > availableWidth) break;
-        usedWidth += separator + width;
-        count += 1;
-      }
-
-      setVisibleCount(count);
+    itemWidthsRef.current = itemMeasureRefs.current.map(
+      (el) => el?.offsetWidth ?? 0
+    );
+    chromeWidthsRef.current = {
+      more: moreMeasureRef.current?.offsetWidth ?? 40,
+      separator: separatorMeasureRef.current?.offsetWidth ?? 12,
     };
 
+    setMeasuredFor(items);
     recalculate();
+  }, [items, needsMeasure, readOnly, recalculate]);
+
+  // Only the container resizes at runtime; the cached widths stay valid.
+  React.useEffect(() => {
+    if (readOnly) return;
+
+    const container = containerRef.current;
+    if (!container) return;
 
     const observer = new ResizeObserver(recalculate);
-    if (containerRef.current) observer.observe(containerRef.current);
-    if (separatorMeasureRef.current) observer.observe(separatorMeasureRef.current);
-    if (moreMeasureRef.current) observer.observe(moreMeasureRef.current);
-    itemMeasureRefs.current.forEach((el) => el && observer.observe(el));
+    observer.observe(container);
 
     return () => observer.disconnect();
-  }, [items, readOnly]);
+  }, [readOnly, recalculate]);
 
   const safeVisibleCount = visibleCount ?? items.length;
-  const visibleItems = items.slice(0, safeVisibleCount);
-  const hiddenItems = items.slice(safeVisibleCount);
+  const visibleItems = React.useMemo(
+    () => items.slice(0, safeVisibleCount),
+    [items, safeVisibleCount]
+  );
+  const hiddenItems = React.useMemo(
+    () => items.slice(safeVisibleCount),
+    [items, safeVisibleCount]
+  );
   const hasHiddenItems = hiddenItems.length > 0;
 
   const renderItems = (renderList: ToolbarItem[]) => (
@@ -231,11 +288,25 @@ export function FixedToolbarButtons() {
     </div>
   );
 
+  // This component re-renders on every editor change (it subscribes via
+  // `useEditorReadOnly`). Holding the rendered element trees by identity means
+  // React bails out of the whole button subtree on those re-renders, leaving
+  // each button to update only through its own editor subscription — which is
+  // the work that actually has to happen.
+  const visibleContent = React.useMemo(
+    () => renderItems(visibleItems),
+    [visibleItems]
+  );
+  const overflowContent = React.useMemo(
+    () => renderOverflowItems(hiddenItems),
+    [hiddenItems]
+  );
+
   return (
     <div ref={containerRef} className="relative flex w-full min-w-0 items-center overflow-hidden">
       {!readOnly && (
         <>
-          <div className="flex min-w-0 items-center overflow-hidden">{renderItems(visibleItems)}</div>
+          <div className="flex min-w-0 items-center overflow-hidden">{visibleContent}</div>
 
           <div className="grow" />
 
@@ -254,12 +325,13 @@ export function FixedToolbarButtons() {
                 sideOffset={6}
               >
                 <ToolbarOverflowContext.Provider value>
-                  {renderOverflowItems(hiddenItems)}
+                  {overflowContent}
                 </ToolbarOverflowContext.Provider>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
 
+          {needsMeasure && (
           <div aria-hidden className="pointer-events-none absolute -z-10 opacity-0">
             <div className="flex items-center">
               {items.map((item, index) => (
@@ -286,6 +358,7 @@ export function FixedToolbarButtons() {
               </div>
             </div>
           </div>
+          )}
         </>
       )}
     </div>

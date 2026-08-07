@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { useDraggable, useDropLine } from '@platejs/dnd';
+import { DndPlugin, useDraggable, useDropLine } from '@platejs/dnd';
 import {
   BlockSelectionPlugin,
   useBlockSelected,
@@ -798,7 +798,11 @@ export const TableElement = withHOC(
 
     // Already inside the fullscreen sub-editor: edit normally, no nested expand.
     if (isInsideFullscreen) {
-      return <TableFloatingToolbar>{content}</TableFloatingToolbar>;
+      return (
+        <TableFloatingToolbar anchorRef={wrapperRef} tableRef={tableRef}>
+          {content}
+        </TableFloatingToolbar>
+      );
     }
 
     return (
@@ -807,7 +811,9 @@ export const TableElement = withHOC(
           tableWrapRef={wrapperRef}
           onExpand={() => setExpanded(true)}
         >
-          <TableFloatingToolbar>{content}</TableFloatingToolbar>
+          <TableFloatingToolbar anchorRef={wrapperRef} tableRef={tableRef}>
+            {content}
+          </TableFloatingToolbar>
         </TableEditorExpandable>
 
         {expanded && (
@@ -828,10 +834,190 @@ export const TableElement = withHOC(
   }
 );
 
+/**
+ * Host apps usually render the editor under a fixed header. The toolbar is
+ * pinned below the table, so while the table is scrolling out of view there is
+ * a window where the toolbar sits inside the header's strip and covers it.
+ * Consumers declare that strip by setting `--op-plate-safe-area-top` (any
+ * CSS length, inherited — put it on the app shell or on the editor container);
+ * the toolbar then fades out before it reaches the header instead of after.
+ */
+const TABLE_TOOLBAR_SAFE_AREA_TOP_VAR = '--op-plate-safe-area-top';
+
+function readSafeAreaTop(node: HTMLElement): number {
+  const raw = getComputedStyle(node)
+    .getPropertyValue(TABLE_TOOLBAR_SAFE_AREA_TOP_VAR)
+    .trim();
+
+  if (!raw) return 0;
+
+  // `getComputedStyle` resolves custom properties as written, so anything but
+  // px would need a layout probe to convert. Px covers the header case and
+  // anything else degrades to "no safe area" rather than to a wrong number.
+  const parsed = Number.parseFloat(raw);
+
+  return Number.isFinite(parsed) && raw.endsWith('px') ? Math.max(parsed, 0) : 0;
+}
+
+function nearestScrollable(node: Element): Element | null {
+  let element = node.parentElement;
+
+  while (element) {
+    // The height check is not redundant: setting only `overflow-x: auto` (which
+    // the table wrapper does) makes the computed `overflow-y` `auto` as well,
+    // so the style alone would match a purely horizontal scroller and pin the
+    // observer root to the table itself.
+    if (
+      /auto|scroll/.test(getComputedStyle(element).overflowY) &&
+      element.scrollHeight > element.clientHeight
+    ) {
+      return element;
+    }
+
+    element = element.parentElement;
+  }
+
+  return null;
+}
+
+/**
+ * How much of the top of the scroll viewport is covered by something the
+ * toolbar must not slide under: the editor's own sticky toolbar, plus whatever
+ * strip the host app declared via `--op-plate-safe-area-top`.
+ *
+ * The editor toolbar is found rather than assumed because its height depends on
+ * the item set and on wrapping, and because the fullscreen modal has its own.
+ * Only sticky/fixed toolbars horizontally overlapping the table count — a
+ * toolbar that scrolls away with the content obstructs nothing.
+ */
+function topObstruction(node: Element, root: Element | null): number {
+  const declared = readSafeAreaTop(node as HTMLElement);
+  const rootTop = root ? root.getBoundingClientRect().top : 0;
+  const nodeRect = node.getBoundingClientRect();
+
+  let obstruction = declared;
+
+  node.ownerDocument.querySelectorAll('[role="toolbar"]').forEach((toolbar) => {
+    if (!/sticky|fixed/.test(getComputedStyle(toolbar).position)) return;
+
+    const rect = toolbar.getBoundingClientRect();
+    if (rect.right <= nodeRect.left || rect.left >= nodeRect.right) return;
+
+    obstruction = Math.max(obstruction, rect.bottom - rootTop);
+  });
+
+  return Math.max(obstruction, 0);
+}
+
+/**
+ * Tracks whether the caret's cell is still visible, measured against the scroll
+ * container and minus the obstructed strip at its top.
+ *
+ * Watching the cell rather than the whole table matters once a table is taller
+ * than the viewport: the table can still be well in view while the cell being
+ * edited has scrolled up under the toolbar, and the toolbar pinned to that cell
+ * would be drawn across it.
+ */
+function useAnchorOnScreen(anchor: Element | null, enabled: boolean) {
+  const [onScreen, setOnScreen] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!anchor || !enabled || typeof IntersectionObserver === 'undefined') {
+      setOnScreen(true);
+
+      return;
+    }
+
+    const root = nearestScrollable(anchor);
+    const obstruction = topObstruction(anchor, root);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setOnScreen(entry?.isIntersecting ?? true);
+      },
+      {
+        root,
+        rootMargin: obstruction ? `-${obstruction}px 0px 0px 0px` : undefined,
+        threshold: 0,
+      }
+    );
+
+    observer.observe(anchor);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [anchor, enabled]);
+
+  return onScreen;
+}
+
+/**
+ * Anchors the toolbar to the cell holding the caret rather than to the whole
+ * table. For a table taller than the viewport the two are nowhere near each
+ * other: anchored to the table, the toolbar sits at its far edge, hundreds of
+ * pixels off screen from where the user is actually typing.
+ *
+ * This is a Radix "virtual" anchor — an object that only has to report a rect —
+ * so it can follow the caret from cell to cell without re-mounting the popover.
+ * The rect is resolved on read (the popover repositions every animation frame),
+ * and falls back to the table wrapper whenever the caret is not in a cell of
+ * *this* table, which also covers the multi-cell selection case.
+ */
+function useCaretCellAnchor(
+  tableRef: React.RefObject<HTMLTableElement | null>,
+  fallbackRef: React.RefObject<HTMLElement | null>
+) {
+  // Radix only re-reads the anchor when the anchor *object* changes — it does
+  // not poll a virtual one. So the identity has to change whenever the caret
+  // moves to another cell, which is what this key drives.
+  const caretPathKey = useEditorSelector(
+    (editor) => (editor.selection?.anchor.path ?? []).join('.'),
+    []
+  );
+  const [caretCell, setCaretCell] = React.useState<Element | null>(null);
+
+  React.useEffect(() => {
+    const table = tableRef.current;
+    const selection = typeof window === 'undefined' ? null : getSelection();
+    const anchorNode = selection?.anchorNode ?? null;
+    const anchorElement =
+      anchorNode?.nodeType === Node.ELEMENT_NODE
+        ? (anchorNode as Element)
+        : (anchorNode?.parentElement ?? null);
+    const cell = anchorElement?.closest('td,th') ?? null;
+
+    setCaretCell(cell && table?.contains(cell) ? cell : null);
+  }, [caretPathKey, tableRef]);
+
+  const anchorRef = React.useMemo(
+    () => ({
+      // Radix reads `current` and nothing else. Carrying the key on the object
+      // documents that a new caret position is meant to produce a new anchor
+      // identity, which is the whole point of rebuilding this memo.
+      caretPathKey,
+      current: {
+        // Resolved on read so that scrolling within one cell stays exact.
+        getBoundingClientRect: () =>
+          (caretCell ?? fallbackRef.current)?.getBoundingClientRect() ??
+          new DOMRect(),
+      },
+    }),
+    [caretCell, caretPathKey, fallbackRef]
+  );
+
+  // The cell is also what the on-screen check must watch — see useAnchorOnScreen.
+  return { anchorRef, caretCell };
+}
+
 function TableFloatingToolbar({
+  anchorRef,
   children,
+  tableRef,
   ...props
-}: React.ComponentProps<typeof PopoverContent>) {
+}: React.ComponentProps<typeof PopoverContent> & {
+  anchorRef?: React.RefObject<HTMLElement | null>;
+  tableRef?: React.RefObject<HTMLTableElement | null>;
+}) {
   const selectedCellCount = useEditorSelector(
     (editor) =>
       editor.getApi(TablePlugin).table.getSelectedCellIds()?.length ?? 0,
@@ -869,22 +1055,50 @@ function TableFloatingToolbar({
     isExpandedSelectionToolbarReady && isExpandedSelectionPending;
   const isToolbarOpen =
     isCollapsedToolbarOpen || shouldRenderExpandedSelectionToolbar;
+  const { anchorRef: caretAnchorRef, caretCell } = useCaretCellAnchor(
+    tableRef ?? emptyTableRef,
+    anchorRef ?? emptyAnchorRef
+  );
+  const isAnchorOnScreen = useAnchorOnScreen(
+    caretCell ?? anchorRef?.current ?? null,
+    isToolbarOpen
+  );
 
   return (
     <Popover open={isToolbarOpen} modal={false}>
-      <PopoverAnchor asChild>{children}</PopoverAnchor>
+      {children}
+      <PopoverAnchor virtualRef={caretAnchorRef} />
       {isCollapsedToolbarOpen && (
-        <CollapsedTableFloatingToolbarContent {...props} />
+        <CollapsedTableFloatingToolbarContent
+          anchorHidden={!isAnchorOnScreen}
+          {...props}
+        />
       )}
       {shouldRenderExpandedSelectionToolbar && (
-        <ExpandedSelectionTableFloatingToolbarContent {...props} />
+        <ExpandedSelectionTableFloatingToolbarContent
+          anchorHidden={!isAnchorOnScreen}
+          {...props}
+        />
       )}
     </Popover>
   );
 }
 
+// Stable no-op refs so the hooks above keep an unconditional call order even
+// when this toolbar is rendered without the optional refs.
+const emptyTableRef: React.RefObject<HTMLTableElement | null> = { current: null };
+const emptyAnchorRef: React.RefObject<HTMLElement | null> = { current: null };
+
+type TableFloatingToolbarContentProps = React.ComponentProps<
+  typeof PopoverContent
+> & {
+  /** The table scrolled out of view — fade the toolbar out instead of leaving
+   * it stranded over whatever is now under it (a sticky app header, usually). */
+  anchorHidden?: boolean;
+};
+
 function ExpandedSelectionTableFloatingToolbarContent(
-  props: React.ComponentProps<typeof PopoverContent>
+  props: TableFloatingToolbarContentProps
 ) {
   const { tf } = useEditorPlugin(TablePlugin);
   const { canMerge, canSplit } = useTableMergeState();
@@ -903,7 +1117,7 @@ function ExpandedSelectionTableFloatingToolbarContent(
 }
 
 function CollapsedTableFloatingToolbarContent(
-  props: React.ComponentProps<typeof PopoverContent>
+  props: TableFloatingToolbarContentProps
 ) {
   const { tf } = useEditorPlugin(TablePlugin);
   const element = useElement<TTableElement>();
@@ -940,6 +1154,7 @@ function CollapsedTableFloatingToolbarContent(
 }
 
 function TableFloatingToolbarContent({
+  anchorHidden = false,
   buttonProps,
   canMerge = false,
   canSplit = false,
@@ -953,7 +1168,7 @@ function TableFloatingToolbarContent({
   onMerge,
   onSplit,
   ...props
-}: React.ComponentProps<typeof PopoverContent> & {
+}: TableFloatingToolbarContentProps & {
   buttonProps?: React.ComponentProps<typeof ToolbarButton>;
   canMerge?: boolean;
   canSplit?: boolean;
@@ -972,13 +1187,45 @@ function TableFloatingToolbarContent({
   return (
     <PopoverContent
       asChild
+      // `updatePositionStrategy="always"` makes Radix reposition on every
+      // animation frame instead of only on the scroll/resize events floating-ui
+      // managed to subscribe to. The default misses host layouts whose scroll
+      // container it did not detect as an overflow ancestor: the toolbar then
+      // freezes at its last viewport position while the table scrolls away
+      // underneath — which is what "the menu flies up into the header" actually
+      // is. Collision avoidance stays ON so the toolbar is never pushed off
+      // screen and out of reach; keeping it on screen while the table is gone
+      // is instead handled by `hideWhenDetached` and the `anchorHidden` fade.
+      updatePositionStrategy="always"
+      hideWhenDetached
       onOpenAutoFocus={(e) => e.preventDefault()}
       contentEditable={false}
       {...props}
     >
       <Toolbar
-        className="scrollbar-hide flex w-auto max-w-[80vw] flex-row overflow-x-auto rounded-md border bg-popover p-1 shadow-md print:hidden"
+        className={cn(
+          'scrollbar-hide flex w-auto max-w-[80vw] flex-row overflow-x-auto rounded-md border bg-popover p-1 shadow-md transition-opacity duration-150 print:hidden',
+          anchorHidden && 'pointer-events-none opacity-0'
+        )}
         contentEditable={false}
+        // In the page editor: one below the editor's own sticky FixedToolbar
+        // (`z-50`). Both used to sit at `z-50`, and this one is portalled to
+        // `<body>`, so it won the tie on DOM order and painted *over* the main
+        // toolbar whenever a partially-scrolled cell put it up there.
+        //
+        // In the fullscreen modal the same value would hide it entirely: the
+        // overlay is itself `z-50` and forms a stacking context, so anything
+        // below 50 lands behind the whole modal. Nothing can be both above the
+        // overlay and below a toolbar nested inside it, so there we keep 50 and
+        // rely on the fade to clear the toolbar's strip.
+        //
+        // Radix mirrors the content's computed z-index onto its popper wrapper,
+        // so setting it here is enough. Inline rather than a class, which would
+        // collide with the `z-50` PopoverContent already carries.
+        style={{ zIndex: isInsideFullscreen ? 50 : 40, ...props.style }}
+        // Read by index.css to disable pointer events on Radix's popper
+        // wrapper too — see the rule there.
+        data-op-toolbar-hidden={anchorHidden ? 'true' : undefined}
       >
         <ToolbarGroup>
           <ColorDropdownMenu tooltip={t('backgroundColor')}>
@@ -1215,13 +1462,65 @@ function ColorDropdownMenu({
   );
 }
 
+/**
+ * Wires react-dnd up for one row.
+ *
+ * This lives in its own component because `useDraggable` subscribes to the
+ * editor and re-renders its host on **every** document change. Held inside
+ * `TableRowElement`, that re-rendered every row of the table on every
+ * keystroke — even while typing in a paragraph elsewhere in the document
+ * (measured: 25 rows × StrictMode = 50 row renders per typed character,
+ * ~60ms of the per-keystroke cost on a 25-row table).
+ *
+ * The row passes its own `nodeRef` in, so drag and drop still attach to the
+ * `<tr>` itself rather than to anything this renders.
+ */
+function TableRowDragSource({
+  element,
+  onDraggingChange,
+  rowRef,
+}: {
+  element: TTableRowElement;
+  onDraggingChange: (isDragging: boolean) => void;
+  rowRef: React.RefObject<HTMLTableRowElement | null>;
+}) {
+  const editor = useEditorRef();
+  const { isDragging, previewRef, handleRef } = useDraggable({
+    element,
+    type: element.type,
+    nodeRef: rowRef as never,
+    canDropNode: ({ dragEntry, dropEntry }) =>
+      PathApi.equals(
+        PathApi.parent(dragEntry[1]),
+        PathApi.parent(dropEntry[1])
+      ),
+    onDropHandler: (_, { dragItem }) => {
+      const dragElement = (dragItem as { element: TElement }).element;
+
+      if (dragElement) {
+        editor.tf.select(dragElement);
+      }
+    },
+  });
+
+  // The drag preview is the row itself.
+  React.useEffect(() => {
+    previewRef.current = rowRef.current as never;
+  });
+
+  React.useEffect(() => {
+    onDraggingChange(isDragging);
+  }, [isDragging, onDraggingChange]);
+
+  return <RowDragHandle dragRef={handleRef} />;
+}
+
 export function TableRowElement({
   children,
   ...props
 }: PlateElementProps<TTableRowElement>) {
   const { element } = props;
   const readOnly = useReadOnly();
-  const editor = useEditorRef();
   const rowIndex = useElementSelector(([, path]) => path.at(-1) as number, [], {
     key: KEYS.tr,
   });
@@ -1240,27 +1539,19 @@ export function TableRowElement({
   );
   const hasControls = !readOnly && !isSelectionAreaVisible;
 
-  const { isDragging, nodeRef, previewRef, handleRef } = useDraggable({
-    element,
-    type: element.type,
-    canDropNode: ({ dragEntry, dropEntry }) =>
-      PathApi.equals(
-        PathApi.parent(dragEntry[1]),
-        PathApi.parent(dropEntry[1])
-      ),
-    onDropHandler: (_, { dragItem }) => {
-      const dragElement = (dragItem as { element: TElement }).element;
-
-      if (dragElement) {
-        editor.tf.select(dragElement);
-      }
-    },
-  });
+  const rowRef = React.useRef<HTMLTableRowElement>(null);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
+  // A drag in progress anywhere means every row has to be a live drop target.
+  // Otherwise only the hovered row needs one, since the handle is what starts a
+  // drag and it is itself only revealed on hover.
+  const isDragInProgress = usePluginOption(DndPlugin, 'isDragging');
+  const needsDragSource = hasControls && (isHovered || isDragInProgress);
 
   return (
     <PlateElement
       {...props}
-      ref={useComposedRef(props.ref, previewRef, nodeRef)}
+      ref={useComposedRef(props.ref, rowRef)}
       as="tr"
       className={cn('group/row', isDragging && 'opacity-50')}
       style={
@@ -1269,13 +1560,24 @@ export function TableRowElement({
           '--tableRowMinHeight': rowMinHeight ? `${rowMinHeight}px` : undefined,
         } as React.CSSProperties
       }
+      attributes={{
+        ...props.attributes,
+        onMouseEnter: () => setIsHovered(true),
+        onMouseLeave: () => setIsHovered(false),
+      }}
     >
       {hasControls && (
         <td
           className="w-2 min-w-2 max-w-2 select-none p-0"
           contentEditable={false}
         >
-          <RowDragHandle dragRef={handleRef} />
+          {needsDragSource && (
+            <TableRowDragSource
+              element={element}
+              onDraggingChange={setIsDragging}
+              rowRef={rowRef}
+            />
+          )}
           <RowDropLine />
         </td>
       )}
@@ -1405,7 +1707,13 @@ export function TableCellElement({
       }}
     >
       <div
-        className="relative z-20 box-border h-full px-3 py-2 whitespace-normal break-normal [overflow-wrap:normal] [word-break:normal] [&_*]:[word-break:normal]"
+        // `whitespace-pre-wrap` is mandatory, not cosmetic: with `white-space:
+        // normal` the browser collapses the trailing space of a cell, so the
+        // caret never advances past it and the next keystroke is inserted
+        // *before* the space ("A1x" + Space + "y" → "A1xy "). `break-normal` /
+        // `word-break: normal` keep long words from being split mid-word,
+        // which is the behaviour this wrapper actually wants.
+        className="relative z-20 box-border h-full px-3 py-2 whitespace-pre-wrap break-normal [overflow-wrap:normal] [word-break:normal] [&_*]:[word-break:normal]"
         style={
           rowSpan === 1
             ? { minHeight: 'var(--tableRowMinHeight, 0px)' }
